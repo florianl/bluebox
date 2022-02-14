@@ -72,6 +72,9 @@ func main() {
 	syscall.Mount("debugfs", "/sys/kernel/debug", "debugfs", uintptr(0), "")
 	fmt.Println("[            ]\tsyscall.Mount(\"debugfs\", \"/sys/kernel/debug\", \"debugfs\", uintptr(0), \"\")")
 
+	syscall.Mount("bpffs", "/sys/fs/bpf", "bpf", uintptr(0), "")
+	fmt.Println("[            ]\tsyscall.Mount(\"bpffs\", \"/sys/fs/bpf\", \"bpffs\", uintptr(0), \"\")")
+
 	// Execute the testing executables
 	for i, exe := range execs {
 		cmd := exec.Command(fmt.Sprintf("./%s", exe), strings.Join(exeArg[i], ", "))
