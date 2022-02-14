@@ -134,7 +134,7 @@ func createInit(execs []string, args [][]string) (string, error) {
 		log.Fatal(err)
 	}
 
-	f, err := os.OpenFile(filepath.Join(dir, "main.go"), os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(filepath.Join(dir, "main.go"), os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		os.RemoveAll(dir)
 		log.Fatal(err)

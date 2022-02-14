@@ -89,7 +89,7 @@ func main() {
 		}
 	}
 
-	archive, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR, 0644)
+	archive, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -140,7 +140,7 @@ func getExecs(dir string) ([]string, error) {
 			return nil
 		}
 		perm := info.Mode().Perm()
-		if perm&0111 == 0 {
+		if perm&0o111 == 0 {
 			// path is not an executable
 			return nil
 		}

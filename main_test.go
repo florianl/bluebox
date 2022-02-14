@@ -17,19 +17,23 @@ func TestParseAdditionalExecs(t *testing.T) {
 		"single input": {
 			input: []string{`foo:"ba zinga"`},
 			execs: []string{
-				"foo"},
+				"foo",
+			},
 			args: [][]string{
-				{"ba", "zinga"}},
+				{"ba", "zinga"},
+			},
 		},
 		"multiple inputs": {
 			input: []string{
 				`foo:bar`,
 				`go:"-123 -456 -789"`,
-				`date`},
+				`date`,
+			},
 			execs: []string{
 				"foo",
 				"go",
-				"date"},
+				"date",
+			},
 			args: [][]string{
 				{"bar"},
 				{"-123", "-456", "-789"},
