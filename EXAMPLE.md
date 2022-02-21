@@ -36,7 +36,7 @@ $ go test -ldflags='-extldflags=-static' -trimpath -tags 'osusergo netgo static_
 Create an archive that can be used as [initial ramdisk](https://en.wikipedia.org/wiki/Initial_ramdisk) and embedd the statically linked executable.
 ```
 $ cd /tmp
-$ bluebox /tmp/netlink/netlink.test:"-test.v"
+$ bluebox -e /tmp/netlink/netlink.test:"-test.v"
 ```
 As argument `-test.v` is passed to `netlink.test` once this binary is executed.
 
