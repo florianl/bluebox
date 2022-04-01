@@ -13,6 +13,8 @@ func TestEmbedExec(t *testing.T) {
 	}{
 		"no input": {
 			input: "",
+			execs: []string{},
+			args:  [][]string{},
 		},
 		"with argument input": {
 			input: `foo:"bar"`,
@@ -32,6 +34,15 @@ func TestEmbedExec(t *testing.T) {
 				{"-123", "-456", "-789"},
 			},
 		},
+		"without arguments": {
+			input: `bazinga`,
+			execs: []string{
+				"bazinga",
+			},
+			args: [][]string{
+				{},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -39,8 +50,8 @@ func TestEmbedExec(t *testing.T) {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			// Reset package global variables
-			execs = execs[:0]
-			args = args[:0]
+			execs = []string{}
+			args = [][]string{}
 
 			if err := embedExec(tc.input); err != nil {
 				t.Fatalf("expected no error but got: %v", err)
