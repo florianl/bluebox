@@ -35,6 +35,7 @@ A version of Go that is [supported by upstream](https://golang.org/doc/devel/rel
 
 ## Similar projects
 
-- [u-root](https://github.com/u-root/u-root)
 - [busybox](https://www.busybox.net)
+- [toybox](https://landley.net/toybox/)
+- [u-root](https://github.com/u-root/u-root)
 - [virtme](https://git.kernel.org/pub/scm/utils/kernel/virtme/virtme.git/)
