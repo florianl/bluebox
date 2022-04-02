@@ -1,4 +1,4 @@
-bluebox
+bluebox [![Go](https://github.com/florianl/bluebox/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/florianl/bluebox/actions/workflows/tests.yml) [![Go Reference](https://pkg.go.dev/badge/github.com/florianl/bluebox.svg)](https://pkg.go.dev/github.com/florianl/bluebox)
 =======
 
 `bluebox` is intended to fast build a low overhead environment to be able to run tests against [Linux kernel](https://kernel.org/) APIs like [netlink](https://man7.org/linux/man-pages/man7/netlink.7.html) or [ebpf](https://man7.org/linux/man-pages/man2/bpf.2.html). It embeds given statically linked executables into the resulting archive. In a virtual environment with this archive the embedded executables will be executed in a sequential order.
