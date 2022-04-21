@@ -41,15 +41,15 @@ func main() {
 	os.MkdirAll("/tmp", 0o777)
 	fmt.Println("[            ]\tos.MkdirAll(\"/tmp\", 0o777)")
 
+	syscall.Mount("tmpfs", "/tmp", "tmpfs", uintptr(0), "")
+	fmt.Println("[            ]\tsyscall.Mount(\"tmpfs\", \"/tmp\", \"tmpfs\", uintptr(0), \"\")")
+
 
 	os.MkdirAll("/proc", 0o555)
 	fmt.Println("[            ]\tos.MkdirAll(\"/proc\", 0o555)")
 
 	syscall.Mount("proc", "/proc", "proc", uintptr(0), "")
 	fmt.Println("[            ]\tsyscall.Mount(\"proc\", \"/proc\", \"proc\", uintptr(0), \"\")")
-
-	syscall.Mount("tmpfs", "/tmp", "tmpfs", uintptr(0), "")
-	fmt.Println("[            ]\tsyscall.Mount(\"tmpfs\", \"/tmp\", \"tmpfs\", uintptr(0), \"\")")
 
 	os.Remove("/dev/tty")
 	syscall.Mknod("/dev/tty", syscall.S_IFCHR | 0o666, 0x0500)
