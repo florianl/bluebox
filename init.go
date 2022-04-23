@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
+
+	exec "golang.org/x/sys/execabs"
 )
 
 var initFile string = `package main
