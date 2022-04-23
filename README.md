@@ -29,7 +29,6 @@ A version of Go that is [supported by upstream](https://golang.org/doc/devel/rel
 
 ## Future ideas
 
-- use [text/template](https://pkg.go.dev/text/template) to write the init program instead of hardcoding it
 - make mounts that are executed by init configurable
 - check if the given executables are statically linked before embedding them
 
