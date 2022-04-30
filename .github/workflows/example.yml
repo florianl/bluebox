@@ -1,0 +1,55 @@
+name: 'bluebox CI/CD example'
+
+on:
+  schedule:
+    - cron: '15 8 * * *' # run job once a week on saturday at 8:15 AM.
+
+jobs:
+  build-initramfs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+        id: go
+
+      - name: checkout bluebox
+        uses: actions/checkout@v3
+
+      - name: build initramfs
+        run: |
+          go build ./...
+          ./bluebox 
+
+      - name: upload initramfs for tests
+        uses: actions/upload-artifact@v2
+        with:
+          name: initramfs
+          path: |
+            initramfs.cpio
+
+  per-kernel-tests:
+    needs: build-initramfs
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kernel-version: ["4.19", "5.10", "5.15"]
+    steps:
+      - name: install qemu && curl
+        run: |
+          sudo apt --yes update
+          sudo apt --yes install qemu-system-x86 curl
+
+      - name: get initramfs
+        uses: actions/download-artifact@v2
+        with:
+          name: initramfs
+      
+      - name: get kernel
+        run: |
+          curl -s -L -O --fail https://github.com/cilium/ci-kernels/raw/master/linux-${{ matrix.kernel-version }}.bz
+      
+      - name: run tests on kernel
+        run: |
+          qemu-system-x86_64  -nographic  -append "console=ttyS0" -m 2G -kernel linux-${{ matrix.kernel-version }}.bz -initrd initramfs.cpio
