@@ -27,11 +27,6 @@ A more detailed example of how `bluebox` can be used is given in [EXAMPLE.md](ht
 
 A version of Go that is [supported by upstream](https://golang.org/doc/devel/release.html#policy)
 
-## Future ideas
-
-- make mounts that are executed by init configurable
-- check if the given executables are statically linked before embedding them
-
 ## Similar projects
 
 - [busybox](https://www.busybox.net)
