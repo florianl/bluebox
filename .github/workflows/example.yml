@@ -23,7 +23,7 @@ jobs:
           ./bluebox 
 
       - name: upload initramfs for tests
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: initramfs
           path: |
