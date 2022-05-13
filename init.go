@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"syscall"
 	"text/template"
+
+	exec "golang.org/x/sys/execabs"
 )
 
 // createInit writes a Go program and compiles it so it can be used as init.
