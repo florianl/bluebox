@@ -2,7 +2,8 @@ name: 'bluebox CI/CD example'
 
 on:
   schedule:
-    - cron: '15 8 * * *' # run job once a week on saturday at 8:15 AM.
+    # Run job once a week on saturday at 8:15 AM.
+    - cron: '15 8 * * 6'
 
 jobs:
   build-initramfs:
@@ -18,11 +19,14 @@ jobs:
         uses: actions/checkout@v3
 
       - name: build initramfs
+        # Instead of installing bluebox with 'go install github.com/florianl/bluebox@VERSION' we
+        # just compile the code here and execute the resulting binary.
         run: |
           go build ./...
           ./bluebox 
 
       - name: upload initramfs for tests
+        # Upload the generated initramfs.cpio and make it available for the parallel per-kernel tests.
         uses: actions/upload-artifact@v3
         with:
           name: initramfs
@@ -37,19 +41,23 @@ jobs:
         kernel-version: ["4.19", "5.10", "5.15"]
     steps:
       - name: install qemu && curl
+        # Make sure required software packages are available.
         run: |
           sudo apt --yes update
           sudo apt --yes install qemu-system-x86 curl
 
       - name: get initramfs
+        # Fetch the initramfs.cpio that was created in the previous step.
         uses: actions/download-artifact@v3
         with:
           name: initramfs
       
       - name: get kernel
+        # Fetch the public kernel image that will be used in this test run.
         run: |
           curl -s -L -O --fail https://github.com/cilium/ci-kernels/raw/master/linux-${{ matrix.kernel-version }}.bz
       
       - name: run tests on kernel
+        # Run the tests.
         run: |
           qemu-system-x86_64  -nographic  -append "console=ttyS0" -m 2G -kernel linux-${{ matrix.kernel-version }}.bz -initrd initramfs.cpio
