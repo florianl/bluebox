@@ -78,3 +78,7 @@ FAIL
 ```
 
 `bluebox` creates a minimal archive that can be used as initial ramdisk. Additional executables like [`ip`](https://man7.org/linux/man-pages/man8/ip.8.html) are not included. So the test `TestIntegrationConnSetBuffersSyscallConn` is expected to fail. Tests that interact with the [netlink](https://man7.org/linux/man-pages/man7/netlink.7.html) API of the [Linux kernel](https://kernel.org/) without such an external dependency pass.
+
+## CI/CD
+
+The [Github Action](https://docs.github.com/en/actions) workflow defined by [example.yml](https://github.com/florianl/bluebox/blob/main/.github/workflows/example.yml) in this repository showcases the use of `bluebox` in a CI/CD setup.
