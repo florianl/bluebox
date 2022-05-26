@@ -33,6 +33,13 @@ func printClose(r io.ReadCloser, prefix string){
 
 
 func main() {
+	// Safe guard to make sure this dynamically created executable does not harm the system
+	// when executed by accident.
+	if os.Getpid() != 1 {
+		fmt.Fprintf(os.Stderr, "%s must only run with PID 1 for safety\n", os.Args[0])
+		return
+	}
+
 	// Create a minimal environment for the Linux kernel
 {{- block "environment" .Environment}}
 {{range .}}{{ print . }}{{end}}
