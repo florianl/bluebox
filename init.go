@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -13,16 +12,10 @@ import (
 )
 
 // createInit writes a Go program and compiles it so it can be used as init.
-func createInit(execs []string, args [][]string) (string, error) {
-	dir, err := os.MkdirTemp("", "go-init")
+func createInit(dir string, execs []string, args [][]string) error {
+	f, err := os.OpenFile(filepath.Join(dir, "init.go"), os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	f, err := os.OpenFile(filepath.Join(dir, "main.go"), os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		os.RemoveAll(dir)
-		log.Fatal(err)
+		return err
 	}
 
 	config := Bluebox{
@@ -48,15 +41,14 @@ func createInit(execs []string, args [][]string) (string, error) {
 
 	tmpl, err := template.New("").Parse(initTemplate)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if err := tmpl.Execute(f, config); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if err := f.Close(); err != nil {
-		os.RemoveAll(dir)
-		log.Fatal(err)
+		return err
 	}
 
 	cmd := exec.CommandContext(context.TODO(), "go", "build", "-o", filepath.Join(dir, "init"),
@@ -67,9 +59,8 @@ func createInit(execs []string, args [][]string) (string, error) {
 	}
 
 	if err := cmd.Run(); err != nil {
-		os.RemoveAll(dir)
-		log.Fatal(err)
+		return err
 	}
 
-	return dir, nil
+	return nil
 }
