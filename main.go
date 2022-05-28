@@ -102,13 +102,18 @@ func main() {
 		}
 	}
 
-	dir, err := createInit(execs, args)
+	dir, err := os.MkdirTemp("", "bluebox-")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer func() {
 		os.RemoveAll(dir)
 	}()
+
+	if err := createInit(dir, execs, args); err != nil {
+		log.Fatal(err)
+	}
+
 	if err := addFile(w, filepath.Join(dir, "init")); err != nil {
 		log.Fatal(err)
 	}
