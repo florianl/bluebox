@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,50 +71,57 @@ func addFile(w *cpio.Writer, file string) error {
 	return w.Flush()
 }
 
+// fail print the error to stderr and calls exit.
+func fail(err error) {
+	fmt.Fprintf(os.Stderr, "%s\n", err)
+	os.Exit(1)
+}
+
 func main() {
 	flag.Usage = usage
 	flag.Parse()
 
 	archive, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
-		log.Fatal(err)
+		fail(err)
 	}
+
 	w := cpio.NewWriter(archive)
 	defer func() {
 		if err := w.Close(); err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(os.Stderr, "%s\n", err)
 		}
 		if err := archive.Close(); err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(os.Stderr, "%s\n", err)
 		}
 	}()
 
 	for _, file := range execs {
 		if err := addFile(w, file); err != nil {
-			log.Fatal(err)
+			fail(err)
 		}
 	}
 
 	for _, file := range readOnlys {
 		if err := addFile(w, file); err != nil {
-			log.Fatal(err)
+			fail(err)
 		}
 	}
 
 	dir, err := os.MkdirTemp("", "bluebox-")
 	if err != nil {
-		log.Fatal(err)
+		fail(err)
 	}
 	defer func() {
 		os.RemoveAll(dir)
 	}()
 
 	if err := createInit(dir, execs, args); err != nil {
-		log.Fatal(err)
+		fail(err)
 	}
 
 	if err := addFile(w, filepath.Join(dir, "init")); err != nil {
-		log.Fatal(err)
+		fail(err)
 	}
 }
 
