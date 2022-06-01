@@ -50,12 +50,12 @@ func main() {
 		fmt.Printf("[            ]\t%s\n", cmd.Path)
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
-			fmt.Printf("[            ]\tFailed to redirect stderr for '%s': %v\n", err, exe)
+			fmt.Printf("[            ]\tFailed to redirect stderr for '%s': %v\n", exe, err)
 			continue
 		}
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-			fmt.Printf("[            ]\tFailed to redirect stdout for '%s': %v\n", err, exe)
+			fmt.Printf("[            ]\tFailed to redirect stdout for '%s': %v\n", exe, err)
 			continue
 		}
 		if err := cmd.Start(); err != nil {
