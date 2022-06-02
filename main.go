@@ -134,7 +134,13 @@ func embedExec(arg string) error {
 		return nil
 	}
 	split := strings.SplitN(arg, ":", 2)
-	execs = append(execs, split[0])
+
+	cmd := split[0]
+	if cmd == "init" || cmd == "bluebox-init" || cmd == "bluebox" {
+		return fmt.Errorf("embeded executable should not be named '%s'", cmd)
+	}
+	execs = append(execs, cmd)
+
 	if len(split) == 1 {
 		args = append(args, []string{})
 		return nil
