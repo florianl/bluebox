@@ -116,11 +116,22 @@ func main() {
 		os.RemoveAll(dir)
 	}()
 
-	if err := createInit(dir, execs, args); err != nil {
+	if err := createInit(dir); err != nil {
 		fail(err)
 	}
 
+	// Generate the init executable that is called by the kernel and prepares the system for
+	// further use.
 	if err := addFile(w, filepath.Join(dir, "init")); err != nil {
+		fail(err)
+	}
+
+	if err := createBluebox(dir, execs, args); err != nil {
+		fail(err)
+	}
+
+	// Generate bluebox-init which will call the given executables in a sequential order.
+	if err := addFile(w, filepath.Join(dir, "bluebox-init")); err != nil {
 		fail(err)
 	}
 }
