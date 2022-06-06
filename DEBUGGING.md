@@ -18,7 +18,7 @@ As an optional step one can extract embeded files from the archive.
 $ cpio -iv < /tmp/initramfs.cpio
 ```
 
-This command will extract at least the `init` executable from `initramfs.cpio` that is dynamically created when using `busybox`. If `busybox` was instructed to embedd more executables or files into the archive, these will be extracted from the archive as well.
+This command will extract at least two executables, `init` and `bluebox-init`, from `initramfs.cpio` that is dynamically created when using `busybox`. If `busybox` was instructed to embedd more executables or files into the archive, these will be extracted from the archive as well.
 
 ## Prepare a debugger for a remote debugging session
 
@@ -32,11 +32,16 @@ $ gdb
       # previous step or is an executable that is triggered by init and placed alongside in the
       # archive.
 (gdb) file init
-      # Breakpoints depend on the executable(s) that were loaded into the debugging session. As
-      # init is a dynamically generated Go executable it will have the symbol main.main. The
-      # function with this symbol will be executed first after the kernel finished its
-      # initialization phase.
-(gdb) break main.main
+(gdb) file bluebox-init
+      # Breakpoints depend on the executable(s) that were loaded into the debugging session. Both
+      # dynamically generated Go executables will have the symbol main.main as they are regular
+      # Go executables.
+      # To debug the setups that set up the minimal environment for the executables set a breakpoint
+      # in the init executable that is called by the Kernel.
+(gdb) break init:main.main
+      # To debug the execution of the additional embedded executables set a breakpoint at the
+      # executable that will run these embedded executables in a sequential order.
+(gdb) break bluebox-init:main.main
       # Instruct the debugger to connect to gdbserver.
 (gdb) remote target localhost:1234
 ```
