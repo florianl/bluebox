@@ -118,6 +118,14 @@ func main() {
 		return
 	}
 
+	// If something went wrong we want to shut down the VM instead of a kernel panic.
+	defer func() {
+		fmt.Printf("[            ] Controlled shut down\n")
+		if err := syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF); err != nil {
+			fmt.Fprintf(os.Stderr, "[            ]\tPower off failed: %v\n", err)
+		}
+	}()
+
 	if err := prepareNewRoot(); err != nil {
 		fmt.Fprintf(os.Stderr, "prepareNewRoot: %v\n", err)
 		return
@@ -133,7 +141,6 @@ func main() {
 {{range .}}{{ print . }}{{end}}
 {{- end}}
 
-	// This call never returns.
 	// Hand over to new init. This call never returns.
 	if err := syscall.Exec("./bluebox-init", []string{}, []string{}); err != nil {
 		fmt.Fprintf(os.Stderr, "exec: %v\n", err)
