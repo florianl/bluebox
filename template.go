@@ -3,11 +3,13 @@ package main
 var initTemplate string = `package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"io"
 	"os/exec"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -22,15 +24,19 @@ var exeArg [][]string = [][]string {
 {{- end}}{{end -}}
 }
 
-func printClose(r io.ReadCloser, prefix string){
+func drainPipe(r io.ReadCloser, prefix string, wg *sync.WaitGroup){
 	defer r.Close()
-	slurp, _ := io.ReadAll(r)
-	if len(slurp) == 0 {
-		return
-	}
-	fmt.Printf("[            ] %s\n%s", prefix, slurp)
-}
+	defer wg.Done()
 
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		fmt.Printf("[            ] %s: %s\n", prefix, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+	    fmt.Printf("[            ]\tFailure scanning %s: %v\n", prefix, err)
+	}
+}
 
 func main() {
 	// Safe guard to make sure this dynamically created executable does not harm the system
@@ -58,34 +64,38 @@ func main() {
 			fmt.Printf("[            ]\tFailed to redirect stdout for '%s': %v\n", exe, err)
 			continue
 		}
+
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go drainPipe(stdout, "stdout", &wg)
+		go drainPipe(stderr, "stderr", &wg)
+
 		if err := cmd.Start(); err != nil {
 			fmt.Printf("[            ]\tFailure starting %s: %v\n", exe, err)
-			printClose(stderr, "stderr")
 			stdout.Close()
 			continue
 		}
+
 		for {
 			var s syscall.WaitStatus
 			var r syscall.Rusage
 			if p, err := syscall.Wait4(-1, &s, 0, &r); p == cmd.Process.Pid {
 				fmt.Printf("[            ]\t%s exited, exit status %d\n", cmd.Path, s.ExitStatus())
-				printClose(stderr, "stderr")
 				break
 			} else if p != -1 {
 				fmt.Printf("[            ]\tReaped PID %d, exit status %d\n", p, s.ExitStatus())
-				printClose(stderr, "stderr")
 				break
 			} else {
 				fmt.Printf("[            ]\tError from Wait4 for orphaned child: %v\n", err)
-				printClose(stderr, "stderr")
 				break
 			}
 		}
 
+		wg.Wait()
+
 		if err := cmd.Process.Release(); err != nil {
 			fmt.Printf("[            ]\tError releasing process %v: %v\n", cmd, err)
 		}
-		printClose(stdout, "stdout")
 	}
 
 	// Shut VM down
