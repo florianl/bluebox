@@ -26,18 +26,22 @@ type Mount struct {
 func (m Mount) String() string {
 	if m.targetCreate {
 		return fmt.Sprintf(
-			"	os.MkdirAll(%q, 0o%o)\n"+
-				"	fmt.Println(\"[            ]\tos.MkdirAll(\\\"%s\\\", 0o%o)\")\n"+
-				"	syscall.Mount(%q, %q, %q, uintptr(%d), %q)\n"+
-				"	fmt.Println(\"[            ]\tsyscall.Mount(\\\"%s\\\", \\\"%s\\\", \\\"%s\\\", uintptr(%d), \\\"%s\\\")\")\n",
+			"	fmt.Println(\"[            ]\tos.MkdirAll(\\\"%s\\\", 0o%o)\")\n"+
+				"	os.MkdirAll(%q, 0o%o)\n"+
+				"	fmt.Println(\"[            ]\tsyscall.Mount(\\\"%s\\\", \\\"%s\\\", \\\"%s\\\", uintptr(%d), \\\"%s\\\")\")\n"+
+				"	if err := syscall.Mount(%q, %q, %q, uintptr(%d), %q); err != nil {\n"+
+				"		fmt.Println(\"[            ]\tERROR:\", err)\n"+
+				"	}\n",
 			m.target, m.targetPerm,
 			m.target, m.targetPerm,
 			m.source, m.target, m.fstype, m.flags, m.data,
 			m.source, m.target, m.fstype, m.flags, m.data)
 	}
 	return fmt.Sprintf(
-		"	syscall.Mount(%q, %q, %q, uintptr(%d), %q)\n"+
-			"	fmt.Println(\"[            ]\tsyscall.Mount(\\\"%s\\\", \\\"%s\\\", \\\"%s\\\", uintptr(%d), \\\"%s\\\")\")\n",
+		"	fmt.Println(\"[            ]\tsyscall.Mount(\\\"%s\\\", \\\"%s\\\", \\\"%s\\\", uintptr(%d), \\\"%s\\\")\")\n"+
+			"	if err := syscall.Mount(%q, %q, %q, uintptr(%d), %q); err != nil {\n"+
+			"		fmt.Println(\"[            ]\tERROR:\", err)\n"+
+			"	}\n",
 		m.source, m.target, m.fstype, m.flags, m.data,
 		m.source, m.target, m.fstype, m.flags, m.data)
 }
@@ -51,9 +55,13 @@ type Nod struct {
 
 func (n Nod) String() string {
 	return fmt.Sprintf(
-		"	os.Remove(%q)\n"+
-			"	syscall.Mknod(%q, %d, 0x%x)\n"+
-			"	fmt.Println(\"[            ]\tsyscall.Mknod(\\\"%s\\\", 0x%x, 0x%x)\")\n",
+		"	fmt.Println(\"[            ]\tos.Remove(\\\"%s\\\")\")\n"+
+			"	os.Remove(%q)\n"+
+			"	fmt.Println(\"[            ]\tsyscall.Mknod(\\\"%s\\\", 0x%x, 0x%x)\")\n"+
+			"	if err := syscall.Mknod(%q, %d, 0x%x); err != nil {\n"+
+			"		fmt.Println(\"[            ]\tERROR:\", err)\n"+
+			"	}\n",
+		n.path,
 		n.path,
 		n.path, n.mode, n.dev,
 		n.path, n.mode, n.dev,
