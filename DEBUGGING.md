@@ -12,7 +12,7 @@ In this guide the following software is used.
 
 ## Extract files from the initramfs archive
 
-As an optional step one can extract embeded files from the archive.
+As an optional step one can extract embedded files from the archive.
 
 ```
 $ cpio -iv < /tmp/initramfs.cpio
