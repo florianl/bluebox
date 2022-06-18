@@ -14,6 +14,7 @@ import (
 var (
 	output string
 	arch   string
+	keep   bool
 )
 
 var (
@@ -38,6 +39,8 @@ func init() {
 		"that are accepted by GOARCH are possible.\nBy default the host architecture is used.")
 	flag.Func("e", executableUsage, embedExec)
 	flag.Func("r", readOnlyUsage, embedFile)
+	flag.BoolVar(&keep, "k", false, "Print out the temporary directory path where files are "+
+		"generated and do not delete it.")
 }
 
 func usage() {
@@ -112,8 +115,13 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
+	if keep {
+		fmt.Println(dir)
+	}
 	defer func() {
-		os.RemoveAll(dir)
+		if !keep {
+			os.RemoveAll(dir)
+		}
 	}()
 
 	if err := createInit(dir); err != nil {
