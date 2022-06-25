@@ -190,21 +190,23 @@ func drainPipe(r io.ReadCloser, prefix string, wg *sync.WaitGroup) {
 	}
 }
 
-func checkFS() error {
+// preventShutdown checks the root file system. If the detected file system type is not TMPFS_MAGIC
+// it returns true.
+func preventShutdown() bool {
 	stat := syscall.Statfs_t{}
 	if err := syscall.Statfs("/", &stat); err != nil {
-		return fmt.Errorf("statfs: %v\n", err)
+		fmt.Fprintf(os.Stderr, "[            ]\tFailed to check FS: %v\n", err)
+		return true
 	}
 	if stat.Type != TMPFS_MAGIC {
 		fmt.Printf("[            ]\tExpected to be executed on TMPFS but is 0x%x\n", stat.Type)
+		return true
 	}
-	return nil
+	return false
 }
 
 func main() {
-	if err := checkFS(); err != nil {
-		fmt.Fprintf(os.Stderr, "[            ]\tFailed to check FS: %v\n", err)
-	}
+	noPowerOff := preventShutdown()
 
 	// Execute the testing executables
 	for i, exe := range execs {
@@ -252,6 +254,11 @@ func main() {
 		if err := cmd.Process.Release(); err != nil {
 			fmt.Fprintf(os.Stderr, "[            ]\tError releasing process %v: %v\n", cmd, err)
 		}
+	}
+
+	if noPowerOff {
+		fmt.Printf("[            ]\tSkipping shutdown\n")
+		return
 	}
 
 	// Shut VM down
