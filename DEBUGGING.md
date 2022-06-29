@@ -18,11 +18,11 @@ As an optional step one can extract embedded files from the archive.
 $ cpio -iv < /tmp/initramfs.cpio
 ```
 
-This command will extract at least two executables, `init` and `bluebox-init`, from `initramfs.cpio` that is dynamically created when using `busybox`. If `busybox` was instructed to embedd more executables or files into the archive, these will be extracted from the archive as well.
+This command will extract at least two executables, `init` and `bluebox-init`, from `initramfs.cpio` that is dynamically created when using `bluebox`. If `bluebox` was instructed to embedd more executables or files into the archive, these will be extracted from the archive as well.
 
 ## Prepare a debugger for a remote debugging session
 
-In a fist shell start `gdb`
+In a first shell start `gdb`
 
 ```
 $ gdb
