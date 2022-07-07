@@ -210,7 +210,7 @@ func main() {
 
 	// Execute the testing executables
 	for i, exe := range execs {
-		cmd := exec.Command(fmt.Sprintf("./%s", exe), strings.Join(exeArg[i], ", "))
+		cmd := exec.Command(fmt.Sprintf("./%s", exe), exeArg[i]...)
 		fmt.Printf("[            ]\t%s %s\n", cmd.Path, strings.Join(exeArg[i], ", "))
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
