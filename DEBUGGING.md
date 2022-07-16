@@ -43,12 +43,12 @@ $ gdb
       # executable that will run these embedded executables in a sequential order.
 (gdb) break bluebox-init:main.main
       # Instruct the debugger to connect to gdbserver.
-(gdb) remote target localhost:1234
+(gdb) target remote localhost:1234
 ```
 ## Start the process that should be debugged
 
-In a second shell run `qemu` with all the arguments as in [EXAMPLE.md](https://github.com/florianl/bluebox/blob/main/EXAMPLE.md) and add `-s` as argument. `-s` is shorthand for `-gdb tcp::1234` and will start a gdbserver on TCP port 1234 so the first shell in the previous step can connect to it.
+In a second shell run `qemu` with all the arguments as in [EXAMPLE.md](https://github.com/florianl/bluebox/blob/main/EXAMPLE.md) and add `-s -S` as argument. `-s` is shorthand for `-gdb tcp::1234` and will start a gdbserver on TCP port 1234 so the first shell in the previous step can connect to it. `-S` will instruct `qemu` to not start CPU at startup and wait for a `continue` instruction from `gdb`.
 
 ```
-$ qemu-system-x86_64 -s -nographic  -append "console=ttyS0" -m 4G -kernel /tmp/ci-kernels/linux-4.14.264.bz -initrd /tmp/initramfs.cpio
+$ qemu-system-x86_64 -s -S -nographic  -append "console=ttyS0" -m 4G -kernel /tmp/ci-kernels/linux-4.14.264.bz -initrd /tmp/initramfs.cpio
 ```
