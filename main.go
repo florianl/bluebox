@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	output string
-	arch   string
-	keep   bool
+	output  string
+	arch    string
+	keep    bool
+	version bool
 )
 
 var (
@@ -41,6 +42,7 @@ func init() {
 	flag.Func("r", readOnlyUsage, embedFile)
 	flag.BoolVar(&keep, "k", false, "Print out the temporary directory path where files are "+
 		"generated and do not delete it.")
+	flag.BoolVar(&version, "version", false, "Print revision of this bluebox executable and return.")
 }
 
 func usage() {
@@ -83,6 +85,11 @@ func fail(err error) {
 func main() {
 	flag.Usage = usage
 	flag.Parse()
+
+	if version {
+		showVersion()
+		return
+	}
 
 	archive, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
