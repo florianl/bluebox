@@ -26,7 +26,7 @@ jobs:
         # Instead of installing bluebox with 'go install github.com/florianl/bluebox@VERSION' we
         # just compile the code here and execute the resulting binary.
         run: |
-          go build ./...
+          go build .
           ./bluebox 
 
       - name: upload initramfs for tests
