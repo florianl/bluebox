@@ -3,18 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/cavaliergopher/cpio"
+	"github.com/florianl/bluebox/initramfs"
 )
 
 var (
 	output  string
 	arch    string
-	keep    bool
 	version bool
 )
 
@@ -40,8 +38,6 @@ func init() {
 		"that are accepted by GOARCH are possible.\nBy default the host architecture is used.")
 	flag.Func("e", executableUsage, embedExec)
 	flag.Func("r", readOnlyUsage, embedFile)
-	flag.BoolVar(&keep, "k", false, "Print out the temporary directory path where files are "+
-		"generated and do not delete it.")
 	flag.BoolVar(&version, "version", false, "Print revision of this bluebox executable and return.")
 }
 
@@ -50,30 +46,6 @@ func usage() {
 	fmt.Printf("%s creates a bootable initramfs, that will embed the given statically "+
 		"linked executables.\n\n", cmd)
 	flag.PrintDefaults()
-}
-
-// addFile adds file to the cpio archive.
-func addFile(w *cpio.Writer, file string) error {
-	f, err := os.Open(file)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	fi, err := f.Stat()
-	if err != nil {
-		return err
-	}
-	if err := w.WriteHeader(&cpio.Header{
-		Name: filepath.Base(file),
-		Mode: cpio.FileMode(fi.Mode().Perm()),
-		Size: fi.Size(),
-	}); err != nil {
-		return err
-	}
-	if _, err := io.Copy(w, f); err != nil {
-		return err
-	}
-	return w.Flush()
 }
 
 // fail print the error to stderr and calls exit.
@@ -91,62 +63,31 @@ func main() {
 		return
 	}
 
-	archive, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR, 0o644)
-	if err != nil {
-		fail(err)
-	}
+	bluebox := initramfs.New()
 
-	w := cpio.NewWriter(archive)
-	defer func() {
-		if err := w.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err)
-		}
-		if err := archive.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err)
-		}
-	}()
-
-	for _, file := range execs {
-		if err := addFile(w, file); err != nil {
+	for i := range execs {
+		if err := bluebox.Execute(execs[i], args[i]...); err != nil {
 			fail(err)
 		}
 	}
 
 	for _, file := range readOnlys {
-		if err := addFile(w, file); err != nil {
+		if err := bluebox.Embed(file); err != nil {
 			fail(err)
 		}
 	}
 
-	dir, err := os.MkdirTemp("", "bluebox-")
+	if arch != "" {
+		if err := bluebox.Setarch(arch); err != nil {
+			fail(err)
+		}
+	}
+	archive, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		fail(err)
 	}
-	if keep {
-		fmt.Println(dir)
-	}
-	defer func() {
-		if !keep {
-			os.RemoveAll(dir)
-		}
-	}()
-
-	if err := createInit(dir); err != nil {
-		fail(err)
-	}
-
-	// Generate the init executable that is called by the kernel and prepares the system for
-	// further use.
-	if err := addFile(w, filepath.Join(dir, "init")); err != nil {
-		fail(err)
-	}
-
-	if err := createBluebox(dir, execs, args); err != nil {
-		fail(err)
-	}
-
-	// Generate bluebox-init which will call the given executables in a sequential order.
-	if err := addFile(w, filepath.Join(dir, "bluebox-init")); err != nil {
+	defer archive.Close()
+	if err := bluebox.Generate(archive); err != nil {
 		fail(err)
 	}
 }
