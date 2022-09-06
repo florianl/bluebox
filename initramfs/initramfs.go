@@ -116,8 +116,7 @@ func (b *Bluebox) Generate(archive io.Writer) error {
 	if err != nil {
 		return err
 	}
-	//defer os.RemoveAll(tmpDir)
-	fmt.Fprintf(os.Stderr, "%s\n", tmpDir)
+	defer os.RemoveAll(tmpDir)
 
 	// Generate the init executable that is called by the kernel and prepares the system for
 	// further use.

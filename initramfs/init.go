@@ -50,7 +50,6 @@ func (b *Bluebox) createInit(dir string) error {
 	cmd.Env = append(os.Environ(), fmt.Sprintf("GOARCH=%s", b.arch))
 
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, ">> %s\n", err)
 		return err
 	}
 
