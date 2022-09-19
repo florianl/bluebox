@@ -146,7 +146,7 @@ func main() {
 {{- end}}
 
 	// Hand over to new init. This call never returns.
-	if err := syscall.Exec("./bluebox-init", []string{}, []string{}); err != nil {
+	if err := syscall.Exec("./bluebox-init", []string{"bluebox"}, []string{}); err != nil {
 		fmt.Fprintf(os.Stderr, "exec: %v\n", err)
 		return
 	}
