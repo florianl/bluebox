@@ -66,6 +66,18 @@ func (b *Bluebox) createBluebox(tmpDir string) error {
 
 	config := blueboxTemplateConfig{}
 
+	for exe, arg := range b.execs {
+		config.Executables = append(config.Executables, filepath.Base(exe))
+		config.Arguments = append(config.Arguments, arg)
+	}
+
+	for _, env := range b.envVars {
+		config.EnvVars = append(config.EnvVars, envVar{
+			Key:   env.Key,
+			Value: env.Value,
+		})
+	}
+
 	tmpl, err := template.New("").Parse(blueboxTemplate)
 	if err != nil {
 		return err

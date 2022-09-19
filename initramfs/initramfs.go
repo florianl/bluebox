@@ -33,7 +33,9 @@ type Bluebox struct {
 // New constructs Bluebox with default values.
 func New() *Bluebox {
 	return &Bluebox{
-		arch: runtime.GOARCH,
+		arch:       runtime.GOARCH,
+		execs:      make(map[string][]string),
+		embeddings: make(map[string]bool),
 	}
 }
 
