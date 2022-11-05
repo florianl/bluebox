@@ -10,6 +10,10 @@ bluebox [![Go](https://github.com/florianl/bluebox/actions/workflows/tests.yml/b
 $ go install github.com/florianl/bluebox@latest
 ```
 
+## API
+
+_Note: APIs subject to change while `bluebox` is still in an experimental phase. You can use it but we suggest you pin a version with your package manager of choice._
+
 ## Example usage
 
 In the following example `qemu-system-x86_64` is required to start the virtual environment. For the kernel image a self compiled kernel or a prepared kernel like they are offered by [github.com/cilium/ci-kernels](https://github.com/cilium/ci-kernels) can be used. If the kernel is compiled for a different architecture, then a different version of `qemu` is required as well `bluebox` also need to know about the target architecture.
