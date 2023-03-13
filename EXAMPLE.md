@@ -43,7 +43,7 @@ As argument `-test.v` is passed to `netlink.test` once this binary is executed.
 ## Run the tests in a virtual machine
 The shown [`qemu-system-x86_64`](https://www.qemu.org/) command will start the pre-compiled Linux kernel from [cilium/ci-kernels](https://github.com/cilium/ci-kernels) and use the archive that was genereated by `bluebox` as initial ramdisk.
 ```
-$ qemu-system-x86_64  -nographic  -append "console=ttyS0" -m 4G -kernel /tmp/ci-kernels/linux-4.14.264.bz -initrd /tmp/initramfs.cpio
+$ qemu-system-x86_64 -nographic -append "console=ttyS0" -m 4G -kernel /tmp/ci-kernels/linux-4.14.264.bz -initrd /tmp/initramfs.cpio
 
 [...]
 
