@@ -242,6 +242,7 @@ func main() {
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[            ]\tFailed to redirect stdout for '%s': %v\n", exe, err)
+			stderr.Close()
 			continue
 		}
 
@@ -252,7 +253,6 @@ func main() {
 
 		if err := cmd.Start(); err != nil {
 			fmt.Fprintf(os.Stderr, "[            ]\tFailure starting %s: %v\n", exe, err)
-			stdout.Close()
 			continue
 		}
 
