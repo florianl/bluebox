@@ -13,14 +13,14 @@ jobs:
   build-initramfs:
     runs-on: ubuntu-latest
     steps:
+      - name: checkout bluebox
+        uses: actions/checkout@v3
+
       - name: set up Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.20.x
         id: go
-
-      - name: checkout bluebox
-        uses: actions/checkout@v3
 
       - name: build initramfs
         # Instead of installing bluebox with 'go install github.com/florianl/bluebox@VERSION' we
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        kernel-version: ["4.19", "5.10", "5.15"]
+        kernel-version: ["4.19", "5.10", "5.15", "5.19", "6.1"]
     steps:
       - name: install qemu && curl
         # Make sure required software packages are available.
