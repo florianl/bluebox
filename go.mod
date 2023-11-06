@@ -4,4 +4,4 @@ go 1.17
 
 require github.com/cavaliergopher/cpio v1.0.1
 
-require golang.org/x/sys v0.13.0
+require golang.org/x/sys v0.14.0
