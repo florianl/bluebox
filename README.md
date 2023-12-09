@@ -37,3 +37,4 @@ A version of Go that is [supported by upstream](https://golang.org/doc/devel/rel
 - [toybox](https://landley.net/toybox/)
 - [u-root](https://github.com/u-root/u-root)
 - [virtme](https://git.kernel.org/pub/scm/utils/kernel/virtme/virtme.git/)
+- [virtme-ng](https://github.com/arighi/virtme-ng)
