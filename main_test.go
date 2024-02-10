@@ -67,3 +67,47 @@ func TestEmbedExec(t *testing.T) {
 		})
 	}
 }
+
+func TestEmbedEnvVar(t *testing.T) {
+	tests := map[string]struct {
+		input string
+		env   map[string]string
+	}{
+		"no input": {
+			input: "",
+			env:   make(map[string]string),
+		},
+		"without value": {
+			input: "key",
+			env: map[string]string{
+				"key": "TRUE",
+			},
+		},
+		"key=value": {
+			input: "key=value",
+			env: map[string]string{
+				"key": "value",
+			},
+		},
+	}
+	for name, tc := range tests {
+		name := name
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			// Reset package global variables
+			for k := range env {
+				delete(env, k)
+			}
+
+			if err := embedEnvVar(tc.input); err != nil {
+				t.Fatalf("expected no error but got: %v", err)
+			}
+
+			if !reflect.DeepEqual(env, tc.env) {
+				t.Fatalf("expected environment variables did not match. "+
+					"Got: %#v\nExpected: %#v", env, tc.env)
+			}
+
+		})
+	}
+}
