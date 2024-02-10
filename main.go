@@ -20,6 +20,7 @@ var (
 	execs     []string
 	readOnlys []string
 	args      [][]string
+	env       map[string]string
 )
 
 var (
@@ -30,6 +31,8 @@ var (
 		"bazinga:\"-bingo -73\"\tAdd the executable bazinga with the arguments '-bingo' and '-73'."
 	readOnlyUsage = "Just embed the given file into the archive. The file will not be executed " +
 		"by the resulting init.\nArgument can be specified multiple times."
+	envVarUsage = "Set environment variable.\n\nFormat:\nfoo=bar\n" +
+		"Argument can be specified multiple times."
 )
 
 func init() {
@@ -38,7 +41,10 @@ func init() {
 		"that are accepted by GOARCH are possible.\nBy default the host architecture is used.")
 	flag.Func("e", executableUsage, embedExec)
 	flag.Func("r", readOnlyUsage, embedFile)
+	flag.Func("v", envVarUsage, embedEnvVar)
 	flag.BoolVar(&version, "version", false, "Print revision of this bluebox executable and return.")
+
+	env = make(map[string]string)
 }
 
 func usage() {
@@ -82,6 +88,13 @@ func main() {
 			fail(err)
 		}
 	}
+
+	if len(env) != 0 {
+		for k, v := range env {
+			bluebox.Setenv(k, v)
+		}
+	}
+
 	archive, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		fail(err)
@@ -121,5 +134,21 @@ func embedExec(arg string) error {
 
 func embedFile(file string) error {
 	readOnlys = append(readOnlys, file)
+	return nil
+}
+
+func embedEnvVar(arg string) error {
+	if len(arg) == 0 {
+		return nil
+	}
+
+	split := strings.SplitN(arg, "=", 2)
+
+	if len(split) == 1 {
+		env[split[0]] = "TRUE"
+	} else {
+		env[split[0]] = split[1]
+	}
+
 	return nil
 }
