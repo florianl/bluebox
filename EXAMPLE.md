@@ -8,23 +8,23 @@ In this example the following software is used.
 
 - [bluebox](https://github.com/florianl/bluebox)
 - [git](https://git-scm.com/)
-- [curl](https://curl.se/)
 - [go](https://go.dev/)
 - [qemu](https://www.qemu.org/)
+- [docker buildx](https://docs.docker.com/reference/cli/docker/buildx/)
 
 ## Get pre-compiled Linux kernel
-To get all pre-compiled [Linux kernels](https://kernel.org/) from the [cilium/ci-kernels](https://github.com/cilium/ci-kernels) repository the [`git-lfs`](https://git-lfs.github.com/) extension is required.
+To get all pre-compiled [Linux kernels](https://kernel.org/) from the [cilium/ci-kernels](https://github.com/cilium/ci-kernels) repository [docker buildx](https://docs.docker.com/reference/cli/docker/buildx/) is required.
 
 ```
-$ cd /tmp
-$ git lfs clone https://github.com/cilium/ci-kernels
+$ mkdir /tmp/ci-kernel
+$ echo "FROM ghcr.io/cilium/ci-kernels:4.9" | docker buildx build --quiet --pull --output="/tmp/ci-kernel" -
 ```
 
 ## Prepare testing code
 This walk through will test the Linux [netlink](https://man7.org/linux/man-pages/man7/netlink.7.html) API using tests from the [Go](https://go.dev/) package [mdlayher/netlink](https://github.com/mdlayher/netlink). In a first step get the code:
 ```
 $ cd /tmp
-$ git clone https://github.com/mdlayher/netlink.git
+$ git clone --depth 1 https://github.com/mdlayher/netlink.git
 ```
 Then build a statically linked executable from the included tests in this repository.
 ```
@@ -43,7 +43,7 @@ As argument `-test.v` is passed to `netlink.test` once this binary is executed.
 ## Run the tests in a virtual machine
 The shown [`qemu-system-x86_64`](https://www.qemu.org/) command will start the pre-compiled Linux kernel from [cilium/ci-kernels](https://github.com/cilium/ci-kernels) and use the archive that was genereated by `bluebox` as initial ramdisk.
 ```
-$ qemu-system-x86_64 -nographic -append "console=ttyS0" -m 4G -kernel /tmp/ci-kernels/linux-4.14.264.bz -initrd /tmp/initramfs.cpio
+$ qemu-system-x86_64 -nographic -append "console=ttyS0" -m 4G -kernel /tmp/ci-kernel/boot/vmlinuz -initrd /tmp/initramfs.cpio
 
 [...]
 
