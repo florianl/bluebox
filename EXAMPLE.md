@@ -81,4 +81,4 @@ FAIL
 
 ## CI/CD
 
-The [Github Action](https://docs.github.com/en/actions) workflow defined by [example.yml](https://github.com/florianl/bluebox/blob/main/.github/workflows/example.yml) in this repository showcases the use of `bluebox` in a CI/CD setup.
+The [Github Action](https://docs.github.com/en/actions) workflow defined by [example.yml](https://github.com/florianl/bluebox/blob/main/.github/workflows/example.yml) in this repository showcases a multi architecture workflow, x86_64 and aarch64, of `bluebox` in a CI/CD setup.
