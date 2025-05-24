@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"github.com/florianl/bluebox/initramfs"
@@ -58,6 +59,24 @@ func usage() {
 func fail(err error) {
 	fmt.Fprintf(os.Stderr, "%s\n", err)
 	os.Exit(1)
+}
+
+func showVersion() {
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		fmt.Printf("bluebox@unknown\n")
+		return
+	}
+
+	var rev string
+
+	for _, bs := range bi.Settings {
+		if bs.Key == "vcs.revision" {
+			rev = bs.Value
+			break
+		}
+	}
+	fmt.Printf("bluebox@%s\n", rev)
 }
 
 func main() {
