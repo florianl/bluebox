@@ -49,11 +49,7 @@ func (b *Bluebox) createInit(dir string) error {
 
 	cmd.Env = append(os.Environ(), fmt.Sprintf("GOARCH=%s", b.arch))
 
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Run()
 }
 
 // createBluebox writes a Go program and compiles it. In a sequential order it will execute
@@ -95,9 +91,5 @@ func (b *Bluebox) createBluebox(tmpDir string) error {
 
 	cmd.Env = append(os.Environ(), fmt.Sprintf("GOARCH=%s", b.arch))
 
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Run()
 }
