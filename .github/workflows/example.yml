@@ -106,10 +106,12 @@ jobs:
         if: matrix.target_arch == 'amd64'
         # Run the x86 specific tests.
         run: |
-          qemu-system-x86_64  -nographic  -append "console=ttyS0" -m 2G -kernel /tmp/ci-kernel/${{ matrix.target_arch }}/${{ matrix.kernel-version }}/boot/vmlinuz -initrd initramfs.cpio | tee log.txt
+          set -o pipefail
+          qemu-system-x86_64  -nographic  -append "console=ttyS0" -m 2G -kernel /tmp/ci-kernel/${{ matrix.target_arch }}/${{ matrix.kernel_version }}/boot/vmlinuz -initrd initramfs.cpio | tee log.txt
 
       - name: run tests on arm64 kernel
         if: matrix.target_arch == 'arm64'
         # Run the arm64 specific tests.
         run: |
-          qemu-system-aarch64 -nographic  -append "console=ttyAMA0"  -M virt -cpu cortex-a57 -m 4G -kernel /tmp/ci-kernel/${{ matrix.target_arch }}/${{ matrix.kernel-version }}/boot/vmlinuz  -initrd initramfs.cpio | tee log.txt
+          set -o pipefail
+          qemu-system-aarch64 -nographic  -append "console=ttyAMA0"  -M virt -cpu cortex-a57 -m 4G -kernel /tmp/ci-kernel/${{ matrix.target_arch }}/${{ matrix.kernel_version }}/boot/vmlinuz  -initrd initramfs.cpio | tee log.txt
