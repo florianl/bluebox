@@ -47,7 +47,10 @@ func (b *Bluebox) createInit(dir string) error {
 	cmd := exec.CommandContext(context.TODO(), "go", "build", "-o", filepath.Join(dir, "init"),
 		f.Name())
 
-	cmd.Env = append(os.Environ(), fmt.Sprintf("GOARCH=%s", b.arch))
+	cmd.Env = append(os.Environ(),
+		fmt.Sprintf("GOARCH=%s", b.arch),
+		"GOOS=linux",
+	)
 
 	return cmd.Run()
 }

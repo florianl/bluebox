@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/cavaliergopher/cpio"
 )
@@ -98,7 +99,12 @@ func (b *Bluebox) Embed(file string) error {
 // Setarch sets the architecture for the generated initramfs archive. If the architecture is not
 // part of GOARCH an error will be returned. By default the architecture of the host is used.
 func (b *Bluebox) Setarch(arch string) error {
-	// TODO: validate arch.
+	arch = strings.ToLower(arch)
+
+	// No specific checks are done on arch at this point.
+	// If arch is not supported, then Generate() will fail
+	// and return an appropriate error.
+
 	b.arch = arch
 	return nil
 }
