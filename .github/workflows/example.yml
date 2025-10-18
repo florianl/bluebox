@@ -62,10 +62,10 @@ jobs:
           - { target_arch: "amd64", kernel_version: "6.11" }
 
           # arm64
-          - { target_arch: "arm64", kernel_version: "6.6" }
+          - { target_arch: "arm64", kernel_version: "6.6.31" }
           - { target_arch: "arm64", kernel_version: "6.7" }
-          - { target_arch: "arm64", kernel_version: "6.8" }
-          - { target_arch: "arm64", kernel_version: "6.9" }
+          - { target_arch: "arm64", kernel_version: "6.8.4" }
+          - { target_arch: "arm64", kernel_version: "6.9.1" }
     steps:
       - name: add Docker repo
         run: |
