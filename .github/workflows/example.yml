@@ -66,6 +66,8 @@ jobs:
           - { target_arch: "arm64", kernel_version: "6.7" }
           - { target_arch: "arm64", kernel_version: "6.8.4" }
           - { target_arch: "arm64", kernel_version: "6.9.1" }
+          - { target_arch: "arm64", kernel_version: "6.12.63" }
+          - { target_arch: "arm64", kernel_version: "6.18.3" }
     steps:
       - name: add Docker repo
         run: |
@@ -114,4 +116,4 @@ jobs:
         # Run the arm64 specific tests.
         run: |
           set -o pipefail
-          qemu-system-aarch64 -nographic  -append "console=ttyAMA0"  -M virt -cpu cortex-a57 -m 4G -kernel /tmp/ci-kernel/${{ matrix.target_arch }}/${{ matrix.kernel_version }}/boot/vmlinuz  -initrd initramfs.cpio | tee log.txt
+          qemu-system-aarch64 -nographic  -append "console=ttyAMA0"  -M virt -cpu cortex-a72 -m 4G -kernel /tmp/ci-kernel/${{ matrix.target_arch }}/${{ matrix.kernel_version }}/boot/vmlinuz  -initrd initramfs.cpio | tee log.txt
