@@ -46,8 +46,6 @@ func TestEmbedExec(t *testing.T) {
 	}
 
 	for name, tc := range tests {
-		name := name
-		tc := tc
 		t.Run(name, func(t *testing.T) {
 			// Reset package global variables
 			execs = []string{}
@@ -91,8 +89,6 @@ func TestEmbedEnvVar(t *testing.T) {
 		},
 	}
 	for name, tc := range tests {
-		name := name
-		tc := tc
 		t.Run(name, func(t *testing.T) {
 			// Reset package global variables
 			for k := range env {
@@ -107,7 +103,6 @@ func TestEmbedEnvVar(t *testing.T) {
 				t.Fatalf("expected environment variables did not match. "+
 					"Got: %#v\nExpected: %#v", env, tc.env)
 			}
-
 		})
 	}
 }

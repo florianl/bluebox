@@ -4,12 +4,15 @@ on:
   pull_request:
     branches: [ '**' ]
 
+permissions:
+  contents: read
+
 name: Go
 jobs:
   build:
     strategy:
       matrix:
-        go-version: [1.24.x, 1.25.x]
+        go-version: [1.25.x, 1.26.x]
     runs-on: ubuntu-latest
 
     steps:
@@ -27,6 +30,25 @@ jobs:
         go test -race -count=5 ./...
 
     - name: Shuffle tests
-      if: startsWith(matrix.go-version, '1.25')
+      if: startsWith(matrix.go-version, '1.26')
       run: |
         go test -shuffle=on ./...
+
+  general:
+    strategy:
+      matrix:
+        target: ["build", "fmt", "lint", "test"]
+        runner: ["ubuntu-latest", "ubuntu-24.04-arm"]
+    runs-on: ${{ matrix.runner }}
+    steps:
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v6
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: 'go.mod'
+
+    - name: make ${{ matrix.target }}
+      run: |
+        make ${{ matrix.target }}
