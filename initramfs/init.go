@@ -60,7 +60,7 @@ func (b *Bluebox) createInit(dir string) error {
 func (b *Bluebox) createBluebox(tmpDir string) error {
 	f, err := os.OpenFile(filepath.Join(tmpDir, "bluebox.go"), os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create temporary file: %v", err)
 	}
 
 	config := blueboxTemplateConfig{}
@@ -79,20 +79,25 @@ func (b *Bluebox) createBluebox(tmpDir string) error {
 
 	tmpl, err := template.New("").Parse(blueboxTemplate)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse template: %v", err)
 	}
 	if err := tmpl.Execute(f, config); err != nil {
-		return err
+		return fmt.Errorf("failed to execute template: %v", err)
 	}
 
 	if err := f.Close(); err != nil {
-		return err
+		return fmt.Errorf("failed to close temporary file: %v", err)
 	}
 
-	cmd := exec.CommandContext(context.TODO(), "go", "build", "-o", filepath.Join(tmpDir, "bluebox-init"),
+	path, err := exec.LookPath("go")
+	if err != nil {
+		return fmt.Errorf("failed to look up 'go' executable: %v", err)
+	}
+
+	cmd := exec.CommandContext(context.TODO(), path, "build", "-o", filepath.Join(tmpDir, "bluebox-init"),
 		f.Name())
 
-	cmd.Env = append(os.Environ(), fmt.Sprintf("GOARCH=%s", b.arch))
+	cmd.Env = append(os.Environ(), fmt.Sprintf("GOARCH=%s", b.arch), "GOOS=linux")
 
 	return cmd.Run()
 }
