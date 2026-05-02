@@ -112,8 +112,10 @@ func (b *Bluebox) Setarch(arch string) error {
 // Setenv sets the value of the environment variable named by the key.
 func (b *Bluebox) Setenv(key, value string) {
 	b.envVars = append(b.envVars,
-		envVar{Key: key,
-			Value: value})
+		envVar{
+			Key:   key,
+			Value: value,
+		})
 }
 
 // Generate writes the configured initramfs archive to a file. Otherwise an error is returned.
