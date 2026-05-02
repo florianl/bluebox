@@ -124,19 +124,19 @@ func (b *Bluebox) Setenv(key, value string) {
 func (b *Bluebox) Generate(archive io.Writer) error {
 	tmpDir, err := os.MkdirTemp("", "bluebox-")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create temporary dictionary: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
 	// Generate the init executable that is called by the kernel and prepares the system for
 	// further use.
 	if err := b.createInit(tmpDir); err != nil {
-		return err
+		return fmt.Errorf("failed to create the initial executable: %v", err)
 	}
 
 	// Generate bluebox-init which will call the given executables in a sequential order.
 	if err := b.createBluebox(tmpDir); err != nil {
-		return err
+		return fmt.Errorf("failed to generate bluebox-init: %v", err)
 	}
 
 	w := cpio.NewWriter(archive)
@@ -144,23 +144,23 @@ func (b *Bluebox) Generate(archive io.Writer) error {
 
 	// Add init to archive.
 	if err := addFile(w, filepath.Join(tmpDir, "init")); err != nil {
-		return err
+		return fmt.Errorf("failed to add init file: %v", err)
 	}
 
 	// Add bluebox-init to archive.
 	if err := addFile(w, filepath.Join(tmpDir, "bluebox-init")); err != nil {
-		return err
+		return fmt.Errorf("failed to add bluebox-init file: %v", err)
 	}
 
 	for file := range b.execs {
 		if err := addFile(w, file); err != nil {
-			return err
+			return fmt.Errorf("failed to add file '%s': %v", file, err)
 		}
 	}
 
 	for file := range b.embeddings {
 		if err := addFile(w, file); err != nil {
-			return err
+			return fmt.Errorf("failed to embedd '%s': %v", file, err)
 		}
 	}
 
