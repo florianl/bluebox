@@ -262,9 +262,9 @@ func main() {
 			if p, err := syscall.Wait4(-1, &s, 0, &r); p == cmd.Process.Pid {
 				fmt.Fprintf(os.Stderr, "[            ]\t%s exited, exit status %d\n", cmd.Path, s.ExitStatus())
 				break
-			} else if p != -1 {
+			} else if p <= 0 {
 				fmt.Fprintf(os.Stderr, "[            ]\tReaped PID %d, exit status %d\n", p, s.ExitStatus())
-				break
+				continue
 			} else {
 				fmt.Fprintf(os.Stderr, "[            ]\tError from Wait4 for orphaned child: %v\n", err)
 				break
