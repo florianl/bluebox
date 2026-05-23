@@ -66,7 +66,7 @@ func (b *Bluebox) Execute(executable string, args ...string) error {
 		return fmt.Errorf("%s should not be a directory", executable)
 	}
 
-	b.execs[executable] = args[:]
+	b.execs[executable] = append([]string{}, args...)
 
 	return nil
 }
