@@ -178,16 +178,16 @@ const (
 )
 
 var envVars [][]string = [][]string{
-{{block "enVars" .EnvVars}}{{range .}}{{printf "\t{\"%s\", \"%s\"},\n" .Key .Value  }}{{end}}{{end -}}
+{{block "enVars" .EnvVars}}{{range .}}{{printf "\t{%q, %q},\n" .Key .Value}}{{end}}{{end -}}
 }
 
 var execs []string = []string{
-{{block "executables" .Executables}}{{range .}}{{printf "\t\"%s\",\n" .}}{{end}}{{end -}}
+{{block "executables" .Executables}}{{range .}}{{printf "\t%q,\n" .}}{{end}}{{end -}}
 }
 
 var exeArg [][]string = [][]string{
 {{block "arguments" .Arguments}}{{range . -}}
-{{printf "\t{"}} {{- range . -}}{{printf " \"%s\"," .}}{{end}}
+{{printf "\t{"}} {{- range . -}}{{printf " %q," .}}{{end}}
 {{- printf "},\n"}}
 {{- end}}{{end -}}
 }
