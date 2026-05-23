@@ -1,0 +1,84 @@
+name: 'bluebox CI/CD kselftest example'
+
+on:
+  schedule:
+    - cron: '15 8 * * 6'
+
+jobs:
+  kernel-selftests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout bluebox
+        uses: actions/checkout@v6
+
+      - name: set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+        id: go
+
+      - name: add Docker repo
+        run: |
+          # From https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
+          # Add Docker's official GPG key:
+          sudo apt-get update
+          sudo apt-get install ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+          # Add the repository to Apt sources:
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+
+      - name: install dependencies
+        run: |
+          sudo apt --yes update
+          sudo apt --yes install --no-install-recommends qemu-system-x86 docker-buildx-plugin
+
+      - name: build bluebox
+        run: go build .
+
+      - name: fetch kernel and selftests
+        run: |
+          mkdir /tmp/ci-kernel
+          echo "FROM ghcr.io/cilium/ci-kernels:stable-selftests" | \
+            docker buildx build --platform linux/amd64 --quiet --pull \
+            --output="/tmp/ci-kernel/" -
+
+      - name: build kselftest binary
+        # Build the selftest runner that loads and verifies BPF object files.
+        # Inspired by https://github.com/cilium/ebpf/blob/main/elf_reader_test.go
+        run: |
+          cd examples/kselftest
+          CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o /tmp/kselftest .
+
+      - name: build initramfs with selftests
+        # Embed the selftest runner together with BPF object files from the image.
+        # bpf_testmod.ko is loaded at runtime so module-dependent tests can run.
+        # verifier_*.bpf.o files are verifier self-tests (skipped by the runner).
+        # Smaller non-verifier files are positive tests expected to load successfully.
+        run: |
+          EMBED="-e /tmp/kselftest"
+          TESTMOD=$(find /tmp/ci-kernel/usr/lib/modules -name "bpf_testmod.ko" | head -1)
+          [ -n "$TESTMOD" ] && EMBED="$EMBED -r $TESTMOD"
+          for f in /tmp/ci-kernel/usr/src/linux/tools/testing/selftests/bpf/verifier_*.bpf.o; do
+            EMBED="$EMBED -r $f"
+          done
+          for f in /tmp/ci-kernel/usr/src/linux/tools/testing/selftests/bpf/*.bpf.o; do
+            [ "$(stat -c%s "$f")" -lt 10240 ] || continue
+            case "$(basename "$f")" in verifier_*) continue ;; esac
+            EMBED="$EMBED -r $f"
+          done
+          ./bluebox $EMBED
+
+      - name: run kernel selftests
+        # Boot the kernel with the selftest initramfs and collect output.
+        run: |
+          set -o pipefail
+          qemu-system-x86_64 -nographic -append "console=ttyS0" -m 4G \
+            -kernel /tmp/ci-kernel/boot/vmlinuz \
+            -initrd initramfs.cpio | tee log.txt
