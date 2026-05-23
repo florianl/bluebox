@@ -49,12 +49,12 @@ func (b *Bluebox) Execute(executable string, args ...string) error {
 
 	// TODO: Validate if and how executing the same executable is possible.
 	if _, ok := b.execs[executable]; ok {
-		return fmt.Errorf("%s is already embeded. Can not add it multiple times", executable)
+		return fmt.Errorf("%s is already embedded. Can not add it multiple times", executable)
 	}
 
 	// Cross check with read-only files.
 	if _, ok := b.embeddings[executable]; ok {
-		return fmt.Errorf("%s is already embeded. Can not add it multiple times", executable)
+		return fmt.Errorf("%s is already embedded. Can not add it multiple times", executable)
 	}
 
 	// Verify name references a file.
@@ -74,12 +74,12 @@ func (b *Bluebox) Execute(executable string, args ...string) error {
 // Embed adds file into the resulting archive but does not add it for execution by the init program.
 func (b *Bluebox) Embed(file string) error {
 	if _, ok := b.embeddings[file]; ok {
-		return fmt.Errorf("%s is already embeded. Can not add it multiple times", file)
+		return fmt.Errorf("%s is already embedded. Can not add it multiple times", file)
 	}
 
 	// Cross check with executable files.
 	if _, ok := b.execs[file]; ok {
-		return fmt.Errorf("%s is already embeded. Can not add it multiple times", file)
+		return fmt.Errorf("%s is already embedded. Can not add it multiple times", file)
 	}
 
 	// Verify name references a file.
@@ -124,7 +124,7 @@ func (b *Bluebox) Setenv(key, value string) {
 func (b *Bluebox) Generate(archive io.Writer) error {
 	tmpDir, err := os.MkdirTemp("", "bluebox-")
 	if err != nil {
-		return fmt.Errorf("failed to create temporary dictionary: %v", err)
+		return fmt.Errorf("failed to create temporary directory: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
@@ -160,7 +160,7 @@ func (b *Bluebox) Generate(archive io.Writer) error {
 
 	for file := range b.embeddings {
 		if err := addFile(w, file); err != nil {
-			return fmt.Errorf("failed to embedd '%s': %v", file, err)
+			return fmt.Errorf("failed to embed '%s': %v", file, err)
 		}
 	}
 
