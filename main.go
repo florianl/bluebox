@@ -142,8 +142,7 @@ func embedExec(arg string) error {
 		args = append(args, []string{})
 		return nil
 	}
-	options := strings.TrimPrefix(split[1], "\"")
-	options = strings.TrimSuffix(options, "\"")
+	options := strings.Trim(split[1], "\"")
 	arguments := strings.Split(options, " ")
 	args = append(args, arguments)
 	return nil
