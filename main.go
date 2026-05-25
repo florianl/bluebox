@@ -108,10 +108,8 @@ func main() {
 		}
 	}
 
-	if len(env) != 0 {
-		for k, v := range env {
-			bluebox.Setenv(k, v)
-		}
+	for k, v := range env {
+		bluebox.Setenv(k, v)
 	}
 
 	archive, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR, 0o644)
