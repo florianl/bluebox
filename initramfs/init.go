@@ -44,7 +44,7 @@ func (b *Bluebox) createInit(dir string) error {
 		return err
 	}
 
-	cmd := exec.CommandContext(context.TODO(), "go", "build", "-o", filepath.Join(dir, "init"),
+	cmd := exec.CommandContext(context.Background(), "go", "build", "-o", filepath.Join(dir, "init"),
 		f.Name())
 
 	cmd.Env = append(os.Environ(),
@@ -94,7 +94,7 @@ func (b *Bluebox) createBluebox(tmpDir string) error {
 		return fmt.Errorf("failed to look up 'go' executable: %v", err)
 	}
 
-	cmd := exec.CommandContext(context.TODO(), path, "build", "-o", filepath.Join(tmpDir, "bluebox-init"),
+	cmd := exec.CommandContext(context.Background(), path, "build", "-o", filepath.Join(tmpDir, "bluebox-init"),
 		f.Name())
 
 	cmd.Env = append(os.Environ(), fmt.Sprintf("GOARCH=%s", b.arch), "GOOS=linux")
