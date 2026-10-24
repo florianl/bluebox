@@ -65,9 +65,9 @@ func (b *Bluebox) createBluebox(tmpDir string) error {
 
 	config := blueboxTemplateConfig{}
 
-	for exe, arg := range b.execs {
-		config.Executables = append(config.Executables, filepath.Base(exe))
-		config.Arguments = append(config.Arguments, arg)
+	for _, e := range b.execs {
+		config.Executables = append(config.Executables, filepath.Base(e.path))
+		config.Arguments = append(config.Arguments, e.args)
 	}
 
 	for _, env := range b.envVars {

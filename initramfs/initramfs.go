@@ -17,6 +17,11 @@ type envVar struct {
 	Key, Value string
 }
 
+type execEntry struct {
+	path string
+	args []string
+}
+
 type Bluebox struct {
 	// arch holds the GOARCH value used when compiling the init.
 	arch string
@@ -24,8 +29,8 @@ type Bluebox struct {
 	// enVars holds a list of environment variables.
 	envVars []envVar
 
-	// execs maps executables to their arguments.
-	execs map[string][]string
+	// execs holds executables and their arguments in execution order.
+	execs []execEntry
 
 	// embeddings maps a list of files that will be added additionallity into the resulting arichve.
 	embeddings map[string]bool
@@ -35,7 +40,6 @@ type Bluebox struct {
 func New() *Bluebox {
 	return &Bluebox{
 		arch:       runtime.GOARCH,
-		execs:      make(map[string][]string),
 		embeddings: make(map[string]bool),
 	}
 }
@@ -48,7 +52,7 @@ func (b *Bluebox) Execute(executable string, args ...string) error {
 	}
 
 	// TODO: Validate if and how executing the same executable is possible.
-	if _, ok := b.execs[executable]; ok {
+	if b.isExec(executable) {
 		return fmt.Errorf("%s is already embedded. Can not add it multiple times", executable)
 	}
 
@@ -66,9 +70,19 @@ func (b *Bluebox) Execute(executable string, args ...string) error {
 		return fmt.Errorf("%s should not be a directory", executable)
 	}
 
-	b.execs[executable] = append([]string{}, args...)
+	b.execs = append(b.execs, execEntry{path: executable, args: append([]string{}, args...)})
 
 	return nil
+}
+
+func (b *Bluebox) isExec(file string) bool {
+	for _, e := range b.execs {
+		if e.path == file {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Embed adds file into the resulting archive but does not add it for execution by the init program.
@@ -78,7 +92,7 @@ func (b *Bluebox) Embed(file string) error {
 	}
 
 	// Cross check with executable files.
-	if _, ok := b.execs[file]; ok {
+	if b.isExec(file) {
 		return fmt.Errorf("%s is already embedded. Can not add it multiple times", file)
 	}
 
@@ -152,9 +166,9 @@ func (b *Bluebox) Generate(archive io.Writer) error {
 		return fmt.Errorf("failed to add bluebox-init file: %v", err)
 	}
 
-	for file := range b.execs {
-		if err := addFile(w, file); err != nil {
-			return fmt.Errorf("failed to add file '%s': %v", file, err)
+	for _, e := range b.execs {
+		if err := addFile(w, e.path); err != nil {
+			return fmt.Errorf("failed to add file '%s': %v", e.path, err)
 		}
 	}
 
