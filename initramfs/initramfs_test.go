@@ -60,3 +60,41 @@ func TestExecuteDuplicate(t *testing.T) {
 		t.Error("Embed accepted a file that is already executed")
 	}
 }
+
+func TestBaseNameCollision(t *testing.T) {
+	dir := t.TempDir()
+
+	var paths []string
+	for _, sub := range []string{"a", "b"} {
+		path := filepath.Join(dir, sub, "x.test")
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, nil, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		paths = append(paths, path)
+	}
+
+	b := New()
+	if err := b.Execute(paths[0]); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.Execute(paths[1]); err == nil {
+		t.Error("Execute accepted two executables with the same base name")
+	}
+	if err := b.Embed(paths[1]); err == nil {
+		t.Error("Embed accepted a file with the base name of an executable")
+	}
+
+	b = New()
+	if err := b.Embed(paths[0]); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.Embed(paths[1]); err == nil {
+		t.Error("Embed accepted two files with the same base name")
+	}
+	if err := b.Execute(paths[1]); err == nil {
+		t.Error("Execute accepted an executable with the base name of an embedded file")
+	}
+}
