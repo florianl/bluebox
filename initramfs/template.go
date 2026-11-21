@@ -256,19 +256,27 @@ func main() {
 			continue
 		}
 
+		// As PID 1 also orphaned processes are reaped here, until the executable itself exits.
 		for {
 			var s syscall.WaitStatus
-			var r syscall.Rusage
-			if p, err := syscall.Wait4(-1, &s, 0, &r); p == cmd.Process.Pid {
-				fmt.Fprintf(os.Stderr, "[            ]\t%s exited, exit status %d\n", cmd.Path, s.ExitStatus())
-				break
-			} else if p <= 0 {
-				fmt.Fprintf(os.Stderr, "[            ]\tReaped PID %d, exit status %d\n", p, s.ExitStatus())
+			p, err := syscall.Wait4(-1, &s, 0, nil)
+			if err == syscall.EINTR {
 				continue
-			} else {
-				fmt.Fprintf(os.Stderr, "[            ]\tError from Wait4 for orphaned child: %v\n", err)
+			}
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "[            ]\tError from Wait4 for %s: %v\n", cmd.Path, err)
 				break
 			}
+			if p != cmd.Process.Pid {
+				fmt.Fprintf(os.Stderr, "[            ]\tReaped PID %d, exit status %d\n", p, s.ExitStatus())
+				continue
+			}
+			if s.Signaled() {
+				fmt.Fprintf(os.Stderr, "[            ]\t%s exited, killed by signal %d\n", cmd.Path, s.Signal())
+			} else {
+				fmt.Fprintf(os.Stderr, "[            ]\t%s exited, exit status %d\n", cmd.Path, s.ExitStatus())
+			}
+			break
 		}
 
 		wg.Wait()
