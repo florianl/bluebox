@@ -52,12 +52,7 @@ func (b *Bluebox) Execute(executable string, args ...string) error {
 	}
 
 	// TODO: Validate if and how executing the same executable is possible.
-	if b.isExec(executable) {
-		return fmt.Errorf("%s is already embedded. Can not add it multiple times", executable)
-	}
-
-	// Cross check with read-only files.
-	if _, ok := b.embeddings[executable]; ok {
+	if b.isEmbedded(executable) {
 		return fmt.Errorf("%s is already embedded. Can not add it multiple times", executable)
 	}
 
@@ -75,9 +70,19 @@ func (b *Bluebox) Execute(executable string, args ...string) error {
 	return nil
 }
 
-func (b *Bluebox) isExec(file string) bool {
+// isEmbedded reports whether a file with the same base name as file is already part of the
+// archive. All files are placed in the root of the archive, so their base names have to be unique.
+func (b *Bluebox) isEmbedded(file string) bool {
+	name := filepath.Base(file)
+
 	for _, e := range b.execs {
-		if e.path == file {
+		if filepath.Base(e.path) == name {
+			return true
+		}
+	}
+
+	for e := range b.embeddings {
+		if filepath.Base(e) == name {
 			return true
 		}
 	}
@@ -87,12 +92,7 @@ func (b *Bluebox) isExec(file string) bool {
 
 // Embed adds file into the resulting archive but does not add it for execution by the init program.
 func (b *Bluebox) Embed(file string) error {
-	if _, ok := b.embeddings[file]; ok {
-		return fmt.Errorf("%s is already embedded. Can not add it multiple times", file)
-	}
-
-	// Cross check with executable files.
-	if b.isExec(file) {
+	if b.isEmbedded(file) {
 		return fmt.Errorf("%s is already embedded. Can not add it multiple times", file)
 	}
 
