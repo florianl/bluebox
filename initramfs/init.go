@@ -1,6 +1,7 @@
 package initramfs
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -44,15 +45,25 @@ func (b *Bluebox) createInit(dir string) error {
 		return err
 	}
 
-	cmd := exec.CommandContext(context.Background(), "go", "build", "-o", filepath.Join(dir, "init"),
-		f.Name())
+	return b.goBuild(filepath.Join(dir, "init"), f.Name())
+}
 
-	cmd.Env = append(os.Environ(),
-		fmt.Sprintf("GOARCH=%s", b.arch),
-		"GOOS=linux",
-	)
+// goBuild compiles the Go file src for the target architecture and writes the executable to out.
+func (b *Bluebox) goBuild(out, src string) error {
+	path, err := exec.LookPath("go")
+	if err != nil {
+		return fmt.Errorf("failed to look up 'go' executable: %v", err)
+	}
 
-	return cmd.Run()
+	cmd := exec.CommandContext(context.Background(), path, "build", "-o", out, src)
+
+	cmd.Env = append(os.Environ(), fmt.Sprintf("GOARCH=%s", b.arch), "GOOS=linux")
+
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("go build failed: %v\n%s", err, bytes.TrimSpace(output))
+	}
+
+	return nil
 }
 
 // createBluebox writes a Go program and compiles it. In a sequential order it will execute
@@ -89,15 +100,5 @@ func (b *Bluebox) createBluebox(tmpDir string) error {
 		return fmt.Errorf("failed to close temporary file: %v", err)
 	}
 
-	path, err := exec.LookPath("go")
-	if err != nil {
-		return fmt.Errorf("failed to look up 'go' executable: %v", err)
-	}
-
-	cmd := exec.CommandContext(context.Background(), path, "build", "-o", filepath.Join(tmpDir, "bluebox-init"),
-		f.Name())
-
-	cmd.Env = append(os.Environ(), fmt.Sprintf("GOARCH=%s", b.arch), "GOOS=linux")
-
-	return cmd.Run()
+	return b.goBuild(filepath.Join(tmpDir, "bluebox-init"), f.Name())
 }
