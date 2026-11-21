@@ -28,9 +28,12 @@ jobs:
       - name: build initramfs
         # Instead of installing bluebox with 'go install github.com/florianl/bluebox@VERSION' we
         # just compile the code here and execute the resulting binary.
+        # The flag parsing tests of bluebox itself are embedded as statically linked executable,
+        # so that every kernel runs something that can be checked afterwards.
         run: |
           go build .
-          ./bluebox -a=${{ matrix.target_arch }}
+          CGO_ENABLED=0 GOARCH=${{ matrix.target_arch }} go test -c -o bluebox.test .
+          ./bluebox -a=${{ matrix.target_arch }} -e bluebox.test:"-test.v -test.run=TestEmbed"
 
       - name: upload initramfs for tests
         # Upload the generated initramfs.cpio and make it available for the parallel per-kernel tests.
@@ -117,3 +120,10 @@ jobs:
         run: |
           set -o pipefail
           qemu-system-aarch64 -nographic  -append "console=ttyAMA0"  -M virt -cpu cortex-a72 -m 4G -kernel /tmp/ci-kernel/${{ matrix.target_arch }}/${{ matrix.kernel_version }}/boot/vmlinuz  -initrd initramfs.cpio | tee log.txt
+
+      - name: check result of embedded executable
+        # qemu exits with 0 no matter what happened inside the virtual machine. So verify that the
+        # embedded executable did run and succeeded.
+        run: |
+          grep --text "stdout: PASS" log.txt
+          grep --text "bluebox.test exited, exit status 0" log.txt
