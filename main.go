@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+	"unicode"
 
 	"github.com/florianl/bluebox/initramfs"
 )
@@ -29,7 +30,8 @@ var (
 		"with the resulting init.\nArgument can be specified multiple times.\n\nFormat:\n" +
 		"foo:bar\t\t\tWhen foo is executed bar will be the given argument.\n" +
 		"date:+%%s\t\tWhen executed it will print the date as Unix timestamp.\n" +
-		"bazinga:\"-bingo -73\"\tAdd the executable bazinga with the arguments '-bingo' and '-73'."
+		"bazinga:\"-bingo -73\"\tAdd the executable bazinga with the arguments '-bingo' and '-73'.\n" +
+		"qux:\"-run 'a b'\"\t\tQuotes and backslashes keep white space as part of an argument."
 	readOnlyUsage = "Just embed the given file into the archive. The file will not be executed " +
 		"by the resulting init.\nArgument can be specified multiple times."
 	envVarUsage = "Set environment variable.\n\nFormat:\nfoo=bar\n" +
@@ -128,30 +130,110 @@ func writeArchive(output string, b *initramfs.Bluebox) error {
 	return b.Generate(archive)
 }
 
+// embedExec parses the value of the -e flag.
+//
 // Examples:
 // foo:bar
 // foo:"-v -bar"
+// foo:"-run 'Test A' -v"
 // foo
 func embedExec(arg string) error {
 	if len(arg) == 0 {
 		return nil
 	}
-	split := strings.SplitN(arg, ":", 2)
 
-	cmd := split[0]
+	cmd, options := splitExec(arg)
 	if initramfs.IsReserved(cmd) {
 		return fmt.Errorf("embedded executable should not be named '%s'", filepath.Base(cmd))
 	}
-	execs = append(execs, cmd)
 
-	if len(split) == 1 {
-		args = append(args, []string{})
-		return nil
+	arguments, err := splitArgs(options)
+	if err != nil {
+		return fmt.Errorf("invalid arguments for %s: %v", cmd, err)
 	}
-	options := strings.Trim(split[1], "\"")
-	arguments := strings.Split(options, " ")
+
+	execs = append(execs, cmd)
 	args = append(args, arguments)
 	return nil
+}
+
+// splitExec splits arg into the path of the executable and its arguments. The colon that follows
+// an existing file is preferred as separator, so that paths can contain colons.
+func splitExec(arg string) (string, string) {
+	for i, r := range arg {
+		if r != ':' {
+			continue
+		}
+		if s, err := os.Stat(arg[:i]); err == nil && !s.IsDir() {
+			return arg[:i], arg[i+1:]
+		}
+	}
+
+	if _, err := os.Stat(arg); err == nil {
+		return arg, ""
+	}
+
+	cmd, options, _ := strings.Cut(arg, ":")
+	return cmd, options
+}
+
+// splitArgs splits s at white space into arguments. Single quotes, double quotes and backslashes
+// keep white space as part of an argument.
+func splitArgs(s string) ([]string, error) {
+	// A single pair of double quotes around all arguments only groups them for the shell.
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' && !strings.Contains(s[1:len(s)-1], `"`) {
+		s = s[1 : len(s)-1]
+	}
+
+	arguments := []string{}
+
+	var (
+		cur     strings.Builder
+		quote   rune
+		escaped bool
+		started bool
+	)
+
+	for _, r := range s {
+		switch {
+		case escaped:
+			cur.WriteRune(r)
+			escaped = false
+		case r == '\\' && quote != '\'':
+			escaped = true
+			started = true
+		case quote != 0:
+			if r == quote {
+				quote = 0
+			} else {
+				cur.WriteRune(r)
+			}
+		case r == '\'' || r == '"':
+			quote = r
+			started = true
+		case unicode.IsSpace(r):
+			if started {
+				arguments = append(arguments, cur.String())
+				cur.Reset()
+				started = false
+			}
+		default:
+			cur.WriteRune(r)
+			started = true
+		}
+	}
+
+	if quote != 0 {
+		return nil, fmt.Errorf("missing closing %c", quote)
+	}
+	if escaped {
+		return nil, fmt.Errorf("trailing backslash")
+	}
+	if started {
+		arguments = append(arguments, cur.String())
+	}
+
+	return arguments, nil
 }
 
 func embedFile(file string) error {
