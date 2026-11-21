@@ -139,8 +139,8 @@ func embedExec(arg string) error {
 	split := strings.SplitN(arg, ":", 2)
 
 	cmd := split[0]
-	if cmd == "init" || cmd == "bluebox-init" || cmd == "bluebox" {
-		return fmt.Errorf("embedded executable should not be named '%s'", cmd)
+	if initramfs.IsReserved(cmd) {
+		return fmt.Errorf("embedded executable should not be named '%s'", filepath.Base(cmd))
 	}
 	execs = append(execs, cmd)
 
@@ -155,6 +155,9 @@ func embedExec(arg string) error {
 }
 
 func embedFile(file string) error {
+	if initramfs.IsReserved(file) {
+		return fmt.Errorf("embedded file should not be named '%s'", filepath.Base(file))
+	}
 	readOnlys = append(readOnlys, file)
 	return nil
 }

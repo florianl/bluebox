@@ -98,3 +98,22 @@ func TestBaseNameCollision(t *testing.T) {
 		t.Error("Execute accepted an executable with the base name of an embedded file")
 	}
 }
+
+func TestReservedNames(t *testing.T) {
+	dir := t.TempDir()
+
+	for _, name := range []string{"init", "bluebox", "bluebox-init"} {
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, nil, 0o755); err != nil {
+			t.Fatal(err)
+		}
+
+		b := New()
+		if err := b.Execute(path); err == nil {
+			t.Errorf("Execute accepted reserved name %q", path)
+		}
+		if err := b.Embed(path); err == nil {
+			t.Errorf("Embed accepted reserved name %q", path)
+		}
+	}
+}
