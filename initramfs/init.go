@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -12,6 +13,59 @@ import (
 	exec "golang.org/x/sys/execabs"
 )
 
+// defaultEnvironment is the minimal environment init sets up for the executables.
+var defaultEnvironment = []environment{
+	mount{source: "devtmpfs", target: "/dev", fstype: "devtmpfs", flags: 0, data: "", targetPerm: 0o755, targetCreate: true},
+	mount{source: "tmpfs", target: "/tmp", fstype: "tmpfs", flags: 0, data: "", targetPerm: 0o755, targetCreate: true},
+	mount{source: "proc", target: "/proc", fstype: "proc", flags: 0, data: "", targetPerm: 0o555, targetCreate: true},
+	nod{path: "/dev/tty", mode: syscall.S_IFCHR | 0o666, dev: 0x0500},
+	nod{path: "/dev/urandom", mode: syscall.S_IFCHR | 0o444, dev: 0x0109},
+	mount{source: "sysfs", target: "/sys", fstype: "sysfs", flags: 0, data: "", targetPerm: 0o555, targetCreate: true},
+	mount{source: "securityfs", target: "/sys/kernel/security", fstype: "securityfs", flags: 0, data: ""},
+	mount{source: "debugfs", target: "/sys/kernel/debug", fstype: "debugfs", flags: 0, data: ""},
+	mount{source: "bpffs", target: "/sys/fs/bpf", fstype: "bpf", flags: 0, data: ""},
+}
+
+// renderInit writes the Go source of init, which sets up env, to w.
+func renderInit(w io.Writer, env []environment) error {
+	tmpl, err := template.New("").Parse(initTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %v", err)
+	}
+	if err := tmpl.Execute(w, initTemplateConfig{Environment: env}); err != nil {
+		return fmt.Errorf("failed to execute template: %v", err)
+	}
+
+	return nil
+}
+
+// renderBluebox writes the Go source of bluebox-init to w.
+func (b *Bluebox) renderBluebox(w io.Writer) error {
+	config := blueboxTemplateConfig{}
+
+	for _, e := range b.execs {
+		config.Executables = append(config.Executables, filepath.Base(e.path))
+		config.Arguments = append(config.Arguments, e.args)
+	}
+
+	for _, env := range b.envVars {
+		config.EnvVars = append(config.EnvVars, envVar{
+			Key:   env.Key,
+			Value: env.Value,
+		})
+	}
+
+	tmpl, err := template.New("").Parse(blueboxTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %v", err)
+	}
+	if err := tmpl.Execute(w, config); err != nil {
+		return fmt.Errorf("failed to execute template: %v", err)
+	}
+
+	return nil
+}
+
 // createInit writes a Go program and compiles it so it can be used as init.
 func (b *Bluebox) createInit(dir string) error {
 	f, err := os.OpenFile(filepath.Join(dir, "init.go"), os.O_CREATE|os.O_WRONLY, 0o600)
@@ -19,25 +73,7 @@ func (b *Bluebox) createInit(dir string) error {
 		return err
 	}
 
-	config := initTemplateConfig{
-		Environment: []environment{
-			mount{source: "devtmpfs", target: "/dev", fstype: "devtmpfs", flags: 0, data: "", targetPerm: 0o755, targetCreate: true},
-			mount{source: "tmpfs", target: "/tmp", fstype: "tmpfs", flags: 0, data: "", targetPerm: 0o755, targetCreate: true},
-			mount{source: "proc", target: "/proc", fstype: "proc", flags: 0, data: "", targetPerm: 0o555, targetCreate: true},
-			nod{path: "/dev/tty", mode: syscall.S_IFCHR | 0o666, dev: 0x0500},
-			nod{path: "/dev/urandom", mode: syscall.S_IFCHR | 0o444, dev: 0x0109},
-			mount{source: "sysfs", target: "/sys", fstype: "sysfs", flags: 0, data: "", targetPerm: 0o555, targetCreate: true},
-			mount{source: "securityfs", target: "/sys/kernel/security", fstype: "securityfs", flags: 0, data: ""},
-			mount{source: "debugfs", target: "/sys/kernel/debug", fstype: "debugfs", flags: 0, data: ""},
-			mount{source: "bpffs", target: "/sys/fs/bpf", fstype: "bpf", flags: 0, data: ""},
-		},
-	}
-
-	tmpl, err := template.New("").Parse(initTemplate)
-	if err != nil {
-		return err
-	}
-	if err := tmpl.Execute(f, config); err != nil {
+	if err := renderInit(f, defaultEnvironment); err != nil {
 		return err
 	}
 
@@ -81,26 +117,8 @@ func (b *Bluebox) createBluebox(tmpDir string) error {
 		return fmt.Errorf("failed to create temporary file: %v", err)
 	}
 
-	config := blueboxTemplateConfig{}
-
-	for _, e := range b.execs {
-		config.Executables = append(config.Executables, filepath.Base(e.path))
-		config.Arguments = append(config.Arguments, e.args)
-	}
-
-	for _, env := range b.envVars {
-		config.EnvVars = append(config.EnvVars, envVar{
-			Key:   env.Key,
-			Value: env.Value,
-		})
-	}
-
-	tmpl, err := template.New("").Parse(blueboxTemplate)
-	if err != nil {
-		return fmt.Errorf("failed to parse template: %v", err)
-	}
-	if err := tmpl.Execute(f, config); err != nil {
-		return fmt.Errorf("failed to execute template: %v", err)
+	if err := b.renderBluebox(f); err != nil {
+		return err
 	}
 
 	if err := f.Close(); err != nil {
