@@ -112,14 +112,20 @@ func main() {
 		bluebox.Setenv(k, v)
 	}
 
-	archive, err := os.OpenFile(output, os.O_CREATE|os.O_RDWR, 0o644)
-	if err != nil {
+	if err := writeArchive(output, bluebox); err != nil {
 		fail(err)
+	}
+}
+
+// writeArchive generates the archive of b and writes it to the file named output.
+func writeArchive(output string, b *initramfs.Bluebox) error {
+	archive, err := os.OpenFile(output, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+	if err != nil {
+		return err
 	}
 	defer archive.Close()
-	if err := bluebox.Generate(archive); err != nil {
-		fail(err)
-	}
+
+	return b.Generate(archive)
 }
 
 // Examples:
