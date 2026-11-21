@@ -1,6 +1,8 @@
 package initramfs
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -115,5 +117,24 @@ func TestReservedNames(t *testing.T) {
 		if err := b.Embed(path); err == nil {
 			t.Errorf("Embed accepted reserved name %q", path)
 		}
+	}
+}
+
+// trailerFailWriter fails the write that carries the trailer of a cpio archive.
+type trailerFailWriter struct{}
+
+var errTrailer = errors.New("no space left for trailer")
+
+func (trailerFailWriter) Write(p []byte) (int, error) {
+	if bytes.Contains(p, []byte("TRAILER!!!")) {
+		return 0, errTrailer
+	}
+	return len(p), nil
+}
+
+func TestGenerateTrailerError(t *testing.T) {
+	b := New()
+	if err := b.Generate(trailerFailWriter{}); err == nil {
+		t.Fatal("Generate dropped the error from writing the trailer")
 	}
 }

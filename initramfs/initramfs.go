@@ -3,6 +3,7 @@
 package initramfs
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -167,8 +168,8 @@ func (b *Bluebox) Generate(archive io.Writer) error {
 		return fmt.Errorf("failed to generate bluebox-init: %v", err)
 	}
 
-	w := cpio.NewWriter(archive)
-	defer w.Close()
+	out := &errWriter{w: archive}
+	w := cpio.NewWriter(out)
 
 	// Add init to archive.
 	if err := addFile(w, filepath.Join(tmpDir, "init")); err != nil {
@@ -192,7 +193,27 @@ func (b *Bluebox) Generate(archive io.Writer) error {
 		}
 	}
 
+	// Close writes the trailer of the archive.
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("failed to finish archive: %v", err)
+	}
+	if out.err != nil {
+		return fmt.Errorf("failed to write archive: %v", out.err)
+	}
+
 	return nil
+}
+
+// errWriter collects the errors of w, as cpio.Writer drops errors from writing headers.
+type errWriter struct {
+	w   io.Writer
+	err error
+}
+
+func (e *errWriter) Write(p []byte) (int, error) {
+	n, err := e.w.Write(p)
+	e.err = errors.Join(e.err, err)
+	return n, err
 }
 
 // addFile adds file to the cpio archive.

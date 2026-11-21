@@ -125,9 +125,17 @@ func writeArchive(output string, b *initramfs.Bluebox) error {
 	if err != nil {
 		return err
 	}
-	defer archive.Close()
 
-	return b.Generate(archive)
+	if err := b.Generate(archive); err != nil {
+		// Do not leave a partial archive behind, but keep special files like /dev/stdout.
+		if fi, statErr := archive.Stat(); statErr == nil && fi.Mode().IsRegular() {
+			defer os.Remove(output)
+		}
+		archive.Close()
+		return err
+	}
+
+	return archive.Close()
 }
 
 // embedExec parses the value of the -e flag.
