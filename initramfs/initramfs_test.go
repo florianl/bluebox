@@ -138,3 +138,28 @@ func TestGenerateTrailerError(t *testing.T) {
 		t.Fatal("Generate dropped the error from writing the trailer")
 	}
 }
+
+func TestGenerateReproducible(t *testing.T) {
+	dir := t.TempDir()
+
+	var archives [2]bytes.Buffer
+	for i := range archives {
+		b := New()
+		for j := range 10 {
+			path := filepath.Join(dir, fmt.Sprintf("file%d", j))
+			if err := os.WriteFile(path, []byte(path), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := b.Embed(path); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := b.Generate(&archives[i]); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if !bytes.Equal(archives[0].Bytes(), archives[1].Bytes()) {
+		t.Error("the same input resulted in different archives")
+	}
+}

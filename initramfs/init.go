@@ -55,9 +55,16 @@ func (b *Bluebox) goBuild(out, src string) error {
 		return fmt.Errorf("failed to look up 'go' executable: %v", err)
 	}
 
-	cmd := exec.CommandContext(context.Background(), path, "build", "-o", out, src)
+	cmd := exec.CommandContext(context.Background(), path, "build", "-trimpath", "-o", out, src)
 
-	cmd.Env = append(os.Environ(), fmt.Sprintf("GOARCH=%s", b.arch), "GOOS=linux")
+	// Settings of the host must not leak into the build. The executables have to be statically
+	// linked and flags from GOFLAGS could change or break the build.
+	cmd.Env = append(os.Environ(),
+		fmt.Sprintf("GOARCH=%s", b.arch),
+		"GOOS=linux",
+		"CGO_ENABLED=0",
+		"GOFLAGS=",
+	)
 
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("go build failed: %v\n%s", err, bytes.TrimSpace(output))

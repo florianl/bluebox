@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/cavaliergopher/cpio"
@@ -187,7 +189,8 @@ func (b *Bluebox) Generate(archive io.Writer) error {
 		}
 	}
 
-	for file := range b.embeddings {
+	// Sort the files, so that the same input results in the same archive.
+	for _, file := range slices.Sorted(maps.Keys(b.embeddings)) {
 		if err := addFile(w, file); err != nil {
 			return fmt.Errorf("failed to embed '%s': %v", file, err)
 		}
