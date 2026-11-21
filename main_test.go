@@ -1,7 +1,10 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
+	"runtime"
 	"testing"
 )
 
@@ -33,6 +36,36 @@ func TestEmbedExec(t *testing.T) {
 			args: [][]string{
 				{"-123", "-456", "-789"},
 			},
+		},
+		"empty arguments": {
+			input: `foo:`,
+			execs: []string{"foo"},
+			args:  [][]string{{}},
+		},
+		"repeated white space": {
+			input: `foo:"-a   -b "`,
+			execs: []string{"foo"},
+			args:  [][]string{{"-a", "-b"}},
+		},
+		"quoted argument": {
+			input: `foo:"-run 'Test A' -v"`,
+			execs: []string{"foo"},
+			args:  [][]string{{"-run", "Test A", "-v"}},
+		},
+		"multiple double quoted arguments": {
+			input: `foo:"a b" "c d"`,
+			execs: []string{"foo"},
+			args:  [][]string{{"a b", "c d"}},
+		},
+		"escaped white space": {
+			input: `foo:a\ b ''`,
+			execs: []string{"foo"},
+			args:  [][]string{{"a b", ""}},
+		},
+		"colon in argument": {
+			input: `foo:-test.run=a:b`,
+			execs: []string{"foo"},
+			args:  [][]string{{"-test.run=a:b"}},
 		},
 		"without arguments": {
 			input: `bazinga`,
@@ -104,5 +137,31 @@ func TestEmbedEnvVar(t *testing.T) {
 					"Got: %#v\nExpected: %#v", env, tc.env)
 			}
 		})
+	}
+}
+
+func TestSplitExecColonInPath(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("colons are not allowed in file names")
+	}
+
+	path := filepath.Join(t.TempDir(), "a:b.test")
+	if err := os.WriteFile(path, nil, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := map[string][2]string{
+		path:               {path, ""},
+		path + ":-test.v":  {path, "-test.v"},
+		path + ":-run=x:y": {path, "-run=x:y"},
+		"missing:-run=x:y": {"missing", "-run=x:y"},
+		"missing":          {"missing", ""},
+	}
+
+	for input, want := range tests {
+		cmd, options := splitExec(input)
+		if cmd != want[0] || options != want[1] {
+			t.Errorf("splitExec(%q) = %q, %q, want %q, %q", input, cmd, options, want[0], want[1])
+		}
 	}
 }
