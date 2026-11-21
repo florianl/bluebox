@@ -8,7 +8,10 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"testing"
+
+	"github.com/cavaliergopher/cpio"
 )
 
 func TestBluebox(t *testing.T) {
@@ -161,5 +164,96 @@ func TestGenerateReproducible(t *testing.T) {
 
 	if !bytes.Equal(archives[0].Bytes(), archives[1].Bytes()) {
 		t.Error("the same input resulted in different archives")
+	}
+}
+
+func TestGenerateArchiveContent(t *testing.T) {
+	dir := t.TempDir()
+
+	files := []struct {
+		name    string
+		content string
+		perm    os.FileMode
+		exec    bool
+	}{
+		{name: "second.test", content: "second", perm: 0o755, exec: true},
+		{name: "first.test", content: "first", perm: 0o700, exec: true},
+		{name: "data.bin", content: "data", perm: 0o644},
+	}
+
+	b := New()
+	for _, f := range files {
+		path := filepath.Join(dir, f.name)
+		if err := os.WriteFile(path, []byte(f.content), f.perm); err != nil {
+			t.Fatal(err)
+		}
+		// Do not depend on the umask.
+		if err := os.Chmod(path, f.perm); err != nil {
+			t.Fatal(err)
+		}
+
+		var err error
+		if f.exec {
+			err = b.Execute(path)
+		} else {
+			err = b.Embed(path)
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var archive bytes.Buffer
+	if err := b.Generate(&archive); err != nil {
+		t.Fatal(err)
+	}
+
+	r := cpio.NewReader(&archive)
+
+	// The generated executables come first.
+	for _, name := range []string{"init", "bluebox-init"} {
+		hdr, err := r.Next()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if hdr.Name != name {
+			t.Fatalf("got entry %q, want %q", hdr.Name, name)
+		}
+		if hdr.Size == 0 {
+			t.Errorf("%s is empty", name)
+		}
+		// Windows does not keep the permission bits.
+		if runtime.GOOS != "windows" && hdr.Mode.Perm()&0o100 == 0 {
+			t.Errorf("%s is not executable: mode %v", name, hdr.Mode)
+		}
+	}
+
+	for _, f := range files {
+		hdr, err := r.Next()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if hdr.Name != f.name {
+			t.Fatalf("got entry %q, want %q", hdr.Name, f.name)
+		}
+		if !hdr.Mode.IsRegular() {
+			t.Errorf("%s is not a regular file: %v", f.name, hdr.Mode)
+		}
+		// Windows does not keep the permission bits.
+		if runtime.GOOS != "windows" && os.FileMode(hdr.Mode.Perm()) != f.perm {
+			t.Errorf("%s has mode %o, want %o", f.name, hdr.Mode.Perm(), f.perm)
+		}
+
+		content, err := io.ReadAll(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(content) != f.content {
+			t.Errorf("%s has content %q, want %q", f.name, content, f.content)
+		}
+	}
+
+	if _, err := r.Next(); err != io.EOF {
+		t.Errorf("expected end of archive, got %v", err)
 	}
 }
