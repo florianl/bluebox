@@ -47,8 +47,8 @@ func New() *Bluebox {
 // Execute embeds executable into the resulting archive and passes arg as arguments to
 // its execution instruction.
 func (b *Bluebox) Execute(executable string, args ...string) error {
-	if executable == "init" || executable == "bluebox" || executable == "bluebox-init" {
-		return fmt.Errorf("embedded executable should not be named '%s'", executable)
+	if IsReserved(executable) {
+		return fmt.Errorf("embedded executable should not be named '%s'", filepath.Base(executable))
 	}
 
 	// TODO: Validate if and how executing the same executable is possible.
@@ -68,6 +68,16 @@ func (b *Bluebox) Execute(executable string, args ...string) error {
 	b.execs = append(b.execs, execEntry{path: executable, args: append([]string{}, args...)})
 
 	return nil
+}
+
+// IsReserved reports whether the base name of file is used by bluebox itself in the archive.
+func IsReserved(file string) bool {
+	switch filepath.Base(file) {
+	case "init", "bluebox", "bluebox-init":
+		return true
+	}
+
+	return false
 }
 
 // isEmbedded reports whether a file with the same base name as file is already part of the
@@ -92,6 +102,10 @@ func (b *Bluebox) isEmbedded(file string) bool {
 
 // Embed adds file into the resulting archive but does not add it for execution by the init program.
 func (b *Bluebox) Embed(file string) error {
+	if IsReserved(file) {
+		return fmt.Errorf("embedded file should not be named '%s'", filepath.Base(file))
+	}
+
 	if b.isEmbedded(file) {
 		return fmt.Errorf("%s is already embedded. Can not add it multiple times", file)
 	}
