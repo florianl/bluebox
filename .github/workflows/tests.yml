@@ -33,7 +33,7 @@ jobs:
         go test -race -count=5 ./...
 
     - name: Shuffle tests
-      if: startsWith(matrix.go-version, '1.26')
+      if: matrix.go-version == 'stable'
       run: |
         go clean -testcache
         go test -shuffle=on ./...
